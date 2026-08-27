@@ -25,7 +25,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "Events and community for VIT, by voss-labs.",
       },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.svg" },
+      { rel: "manifest", href: "/manifest.json" },
+    ],
   }),
   shellComponent: RootDocument,
 });
