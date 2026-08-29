@@ -2,8 +2,6 @@
 
 Events and community platform for **VIT** (Vidyalankar Institute of Technology, Mumbai). Built under [voss-labs](https://github.com/voss-labs).
 
-Sister project to [verp](https://github.com/voss-labs/verp).
-
 > The wedge: replace per-event Google Forms with unified, one-click registration. Clubs post events. Students register with one tap. Community managers see registrations from a dashboard.
 
 ## Status
