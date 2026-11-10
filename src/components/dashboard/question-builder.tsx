@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import {
   DEFAULT_MAX_WORDS,
   MAX_OPTIONS,
@@ -68,7 +69,9 @@ function serialize(drafts: Draft[]): string {
   )
 }
 
-function keepInForm(event: React.KeyboardEvent<HTMLInputElement>) {
+function keepInForm(
+  event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+) {
   if (event.key === "Enter") event.preventDefault()
 }
 
@@ -128,7 +131,7 @@ export function QuestionBuilder({
         return (
           <div
             key={d.id}
-            className="flex min-w-0 flex-col gap-4 rounded-lg border p-4"
+            className="flex min-w-0 flex-col gap-4 rounded-lg border p-3 sm:p-4"
           >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">
@@ -152,11 +155,17 @@ export function QuestionBuilder({
             </div>
             <Field>
               <FieldLabel htmlFor={`question-${d.id}`}>Question</FieldLabel>
-              <Input
+              <Textarea
                 id={`question-${d.id}`}
+                rows={1}
                 value={d.label}
-                onChange={(e) => patch(d.id, { label: e.target.value })}
+                onChange={(e) =>
+                  patch(d.id, {
+                    label: e.target.value.replace(/\s*\n\s*/g, " "),
+                  })
+                }
                 onKeyDown={keepInForm}
+                className="min-h-11 resize-none md:min-h-9 md:py-1.5"
                 placeholder={
                   d.type === "choice"
                     ? "Which role do you want to interview for?"
@@ -226,7 +235,7 @@ export function QuestionBuilder({
                 </Button>
               </Field>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-2 items-start gap-3 sm:gap-4">
                 <Field>
                   <FieldLabel htmlFor={`min-${d.id}`}>Minimum words</FieldLabel>
                   <Input
@@ -273,7 +282,7 @@ export function QuestionBuilder({
           </div>
         )
       })}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2 sm:flex sm:flex-wrap">
         <Button
           type="button"
           variant="outline"

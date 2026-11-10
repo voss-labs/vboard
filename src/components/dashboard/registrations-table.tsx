@@ -127,7 +127,7 @@ export function RegistrationsTable({
             setSelected(new Set())
           }}
         >
-          <TabsList className="h-auto w-full max-w-full flex-wrap justify-start gap-1 group-data-horizontal/tabs:h-auto">
+          <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto group-data-horizontal/tabs:h-auto md:flex-wrap md:overflow-visible">
             {FILTERS.map((f) => (
               <TabsTrigger
                 key={f}
@@ -268,57 +268,77 @@ export function RegistrationsTable({
               <TableRow
                 key={r.id}
                 data-state={selected.has(r.id) ? "selected" : undefined}
+                className={
+                  selectable
+                    ? "max-md:grid-cols-[auto_minmax(0,1fr)] max-md:gap-x-0!"
+                    : undefined
+                }
               >
                 {selectable && (
                   <TableCell className="pl-6">
-                    <label className="flex min-h-11 items-center gap-2 md:min-h-0">
+                    <label className="flex size-11 items-center md:size-auto">
                       <Checkbox
                         checked={selected.has(r.id)}
                         onCheckedChange={(on) => toggle(r.id, on)}
                         aria-label={`Select ${r.name}`}
                       />
-                      <span className="text-muted-foreground text-xs md:sr-only">
-                        Select attendee
-                      </span>
                     </label>
                   </TableCell>
                 )}
-                <TableCell className={selectable ? "" : "pl-6"}>
+                <TableCell
+                  className={selectable ? "max-md:self-center" : "pl-6"}
+                >
                   <div className="font-medium">{r.name}</div>
                   <div className="text-muted-foreground text-xs">{r.email}</div>
                 </TableCell>
-                <TableCell data-label="Roll no." className="tabular-nums">
+                <TableCell
+                  data-label="Roll no."
+                  className="tabular-nums max-md:col-span-full"
+                >
                   {r.rollNumber ?? "—"}
                 </TableCell>
-                <TableCell data-label="Department">
+                <TableCell
+                  data-label="Department"
+                  className="max-md:col-span-full"
+                >
                   {r.department ?? "—"}
                 </TableCell>
                 {choiceQuestions.map((c) => (
-                  <TableCell key={c.id} data-label={c.label}>
+                  <TableCell
+                    key={c.id}
+                    data-label={c.label}
+                    className="max-md:col-span-full"
+                  >
                     {r.answers[c.id] ?? "—"}
                   </TableCell>
                 ))}
                 <TableCell
                   data-label="Registered"
-                  className="text-muted-foreground"
+                  className="text-muted-foreground max-md:col-span-full"
                 >
                   {r.registeredAt}
                 </TableCell>
                 <TableCell
                   data-label="Status"
-                  className={questions.length ? "" : "pr-6"}
+                  className={
+                    questions.length
+                      ? "max-md:col-span-full"
+                      : "pr-6 max-md:col-span-full"
+                  }
                 >
                   <StatusBadge status={r.status} />
                 </TableCell>
                 {questions.length > 0 && (
-                  <TableCell className="pr-6 md:text-right">
+                  <TableCell className="pr-6 max-md:col-span-full max-md:pt-1 md:text-right">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="w-full md:w-auto"
                       onClick={() => show(r)}
                       aria-label={`View answers from ${r.name}`}
                     >
-                      View
+                      <span className="md:hidden">View answers</span>
+                      <span className="max-md:hidden">View</span>
                     </Button>
                   </TableCell>
                 )}
