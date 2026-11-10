@@ -23,6 +23,7 @@ import { SubmitButton } from "@/components/submit-button"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button-variants"
 import type { ButtonVariants } from "@/components/ui/button-variants"
+import { LinkedText } from "@/components/linked-text"
 import { getPostById } from "@/db/queries/posts"
 import { listRegistrations } from "@/db/queries/registrations"
 import { formatEventRange, formatStamp } from "@/lib/format"
@@ -267,7 +268,7 @@ export default async function ManagePostPage({
       ) : (
         <Panel title="Post">
           <p className="text-sm leading-relaxed whitespace-pre-line">
-            {post.body}
+            <LinkedText text={post.body} />
           </p>
         </Panel>
       )}
