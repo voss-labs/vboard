@@ -1,4 +1,5 @@
-"use client"
+import { LinkedText } from "@/components/linked-text"
+;("use client")
 
 import { useState } from "react"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
@@ -126,7 +127,7 @@ export function RegistrationDetail({
                     </div>
                     {answer ? (
                       <p className="max-w-[72ch] text-sm leading-relaxed break-words whitespace-pre-line">
-                        {answer}
+                        <LinkedText text={answer} />
                       </p>
                     ) : (
                       <p className="text-muted-foreground text-sm">No answer</p>

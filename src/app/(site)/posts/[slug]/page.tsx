@@ -1,3 +1,4 @@
+import { LinkedText } from "@/components/linked-text"
 import { withDb } from "@/db"
 import { getTrustedActor } from "@/lib/session"
 import type { Metadata } from "next"
@@ -139,7 +140,7 @@ export default async function PostPage({ params }: Props) {
               {post.isEvent ? "About this event" : "Announcement"}
             </h2>
             <p className="max-w-[72ch] text-base leading-7 break-words whitespace-pre-line">
-              {post.body}
+              <LinkedText text={post.body} />
             </p>
           </section>
           {showForm && (
@@ -284,7 +285,7 @@ function YourAnswers({
                 {question.label}
               </dt>
               <dd className="leading-relaxed break-words whitespace-pre-line">
-                {answers[question.id]}
+                <LinkedText text={answers[question.id]} />
               </dd>
             </div>
           ))}

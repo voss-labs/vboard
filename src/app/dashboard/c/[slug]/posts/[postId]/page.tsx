@@ -1,3 +1,4 @@
+import { LinkedText } from "@/components/linked-text"
 import { z } from "zod"
 import { withDb } from "@/db"
 import { WorkspaceRouteTitle } from "@/components/dashboard/route-context"
@@ -267,7 +268,7 @@ export default async function ManagePostPage({
       ) : (
         <Panel title="Post">
           <p className="text-sm leading-relaxed whitespace-pre-line">
-            {post.body}
+            <LinkedText text={post.body} />
           </p>
         </Panel>
       )}
