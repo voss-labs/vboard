@@ -1,3 +1,5 @@
+import type { RegistrationQuestion } from "@/lib/registration-form"
+
 export type Community = {
   id: string
   slug: string
@@ -34,6 +36,7 @@ export type Post = {
   registrationClosesAt?: Date
   capacity?: number
   requiresApproval: boolean
+  registrationQuestions?: RegistrationQuestion[]
   registrationCount: number
   createdAt: Date
 }

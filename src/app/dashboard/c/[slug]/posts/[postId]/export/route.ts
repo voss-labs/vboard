@@ -38,6 +38,7 @@ export async function GET(
       "Status",
       "Registered at",
       "Checked in at",
+      ...post.registrationQuestions.map((q) => q.label),
     ],
     rows.map((r) => [
       r.name,
@@ -47,6 +48,7 @@ export async function GET(
       r.status,
       r.registeredAt,
       r.checkedInAt,
+      ...post.registrationQuestions.map((q) => r.answers[q.id] ?? ""),
     ])
   )
   return new NextResponse(csv, {

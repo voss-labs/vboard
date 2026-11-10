@@ -2,6 +2,10 @@ import { and, eq, inArray, sql } from "drizzle-orm"
 import type { DbContext } from "@/db"
 import { registration } from "@/db/schema"
 import { createAuditLog } from "@/db/queries/audit"
+import type {
+  RegistrationAnswers,
+  RegistrationQuestion,
+} from "@/lib/registration-form"
 import {
   projectionRows,
   requireActor,
@@ -35,13 +39,29 @@ async function eventScope(ctx: DbContext, postId: string) {
   const rows = await projectionRows<{
     communityId: string
     requiresApproval: boolean
+    questions: RegistrationQuestion[]
   }>(
     ctx,
     sql`select data from vboard_api.registration_event(${postId}::uuid) data`
   )
   return requireRow(rows)
 }
-export async function registerForEvent(ctx: DbContext, postId: string) {
+export async function getEventQuestions(ctx: DbContext, postId: string) {
+  return (await eventScope(ctx, postId)).questions
+}
+export async function hasRegistrations(ctx: DbContext, postId: string) {
+  const rows = await ctx.tx
+    .select({ id: registration.id })
+    .from(registration)
+    .where(eq(registration.postId, postId))
+    .limit(1)
+  return rows.length > 0
+}
+export async function registerForEvent(
+  ctx: DbContext,
+  postId: string,
+  answers: RegistrationAnswers = {}
+) {
   const userId = requireActor(ctx)
   await ctx.tx.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${postId}::text, 0))`
@@ -57,6 +77,7 @@ export async function registerForEvent(ctx: DbContext, postId: string) {
       .update(registration)
       .set({
         status,
+        answers,
         decidedBy: null,
         decidedAt: null,
         checkedInAt: null,
@@ -67,7 +88,7 @@ export async function registerForEvent(ctx: DbContext, postId: string) {
   } else {
     rows = await ctx.tx
       .insert(registration)
-      .values({ postId, userId, status })
+      .values({ postId, userId, status, answers })
       .returning()
   }
   const row = requireRow(rows)
@@ -172,6 +193,7 @@ export async function listRegistrations(ctx: DbContext, postId: string) {
     email: string
     rollNumber: string | null
     department: string | null
+    answers: RegistrationAnswers
   }>(
     ctx,
     sql`select data from vboard_api.event_attendees(${postId}::uuid) data`

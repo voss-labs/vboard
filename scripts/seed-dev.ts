@@ -14,7 +14,7 @@ import {
 import { DEV_PERSONAS } from "@/lib/dev-personas"
 import type { CommunityRole } from "@/lib/rbac"
 import type { RegistrationStatus } from "@/lib/registration"
-import { demoDrafts, demoPosts, TEAM_FILL } from "./lib/demo"
+import { demoAnswers, demoDrafts, demoPosts, TEAM_FILL } from "./lib/demo"
 import { communities, posts } from "./lib/fixtures"
 import {
   DEPARTMENTS,
@@ -186,6 +186,7 @@ async function run() {
           registrationClosesAt: p.registrationClosesAt ?? null,
           capacity: p.capacity ?? null,
           requiresApproval: p.requiresApproval,
+          registrationQuestions: p.registrationQuestions ?? [],
           createdAt: p.createdAt,
         })
         .returning({ id: post.id })
@@ -201,6 +202,7 @@ async function run() {
 
       if (!p.isEvent) continue
       const rows: (typeof registration.$inferInsert)[] = []
+      const questions = p.registrationQuestions ?? []
       const count = Math.min(p.registrationCount, pool.length)
       for (let i = 0; i < count; i++) {
         const regStatus = registrationStatus({ ...p, status }, i, now)
@@ -209,6 +211,7 @@ async function run() {
           userId: pool[(cursor + i) % pool.length],
           status: regStatus,
           checkedInAt: regStatus === "attended" ? p.startsAt : null,
+          answers: demoAnswers(questions, i),
           registeredAt: new Date(p.createdAt.getTime() + (i + 1) * 3_600_000),
         })
       }
@@ -220,6 +223,7 @@ async function run() {
           userId: ids.get("priya.nair@vit.edu.in")!,
           status: priya,
           checkedInAt: priya === "attended" ? p.startsAt : null,
+          answers: demoAnswers(questions, count),
         })
       if (rows.length) await db.insert(registration).values(rows)
       registrations += rows.length

@@ -31,6 +31,7 @@ export type PostInput = Pick<
   | "registrationClosesAt"
   | "capacity"
   | "requiresApproval"
+  | "registrationQuestions"
 >
 export type DashboardEventWhen = "all" | "upcoming" | "past"
 export type DashboardEventStatus = "all" | typeof post.$inferSelect.status

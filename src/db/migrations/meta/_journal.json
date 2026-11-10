@@ -71,6 +71,13 @@
       "when": 1792306800000,
       "tag": "0009_single_runtime_principal",
       "breakpoints": false
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794325679215,
+      "tag": "0010_registration_questions",
+      "breakpoints": true
     }
   ]
 }

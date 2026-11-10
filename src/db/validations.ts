@@ -2,6 +2,7 @@ import { z } from "zod"
 import { createInsertSchema } from "drizzle-zod"
 import { community, communityMember, post, profile } from "@/db/schema"
 import { parseCampusDateTime } from "@/lib/format"
+import { questionsSchema } from "@/lib/registration-form"
 import { parseRollNumber } from "@/lib/roll-number"
 
 const optionalText = (max: number) =>
@@ -29,6 +30,18 @@ const checkbox = z
   .optional()
   .transform((v) => v === "on" || v === "true")
 
+const questionsField = z
+  .string()
+  .transform((v, ctx) => {
+    try {
+      return JSON.parse(v || "[]") as unknown
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Check the questions" })
+      return z.NEVER
+    }
+  })
+  .pipe(questionsSchema)
+
 export const postFormSchema = createInsertSchema(post)
   .pick({
     title: true,
@@ -44,6 +57,7 @@ export const postFormSchema = createInsertSchema(post)
     registrationClosesAt: true,
     capacity: true,
     requiresApproval: true,
+    registrationQuestions: true,
   })
   .extend({
     title: z.string().trim().min(3, "Title is too short").max(140),
@@ -73,6 +87,7 @@ export const postFormSchema = createInsertSchema(post)
         return n
       }),
     requiresApproval: checkbox,
+    registrationQuestions: questionsField,
     intent: z.enum(["draft", "publish", "save"]),
   })
   .strict()
@@ -121,6 +136,7 @@ export const postFormSchema = createInsertSchema(post)
     registrationClosesAt: v.isEvent ? v.registrationClosesAt : null,
     capacity: v.isEvent ? v.capacity : null,
     requiresApproval: v.isEvent ? v.requiresApproval : false,
+    registrationQuestions: v.isEvent ? v.registrationQuestions : [],
     intent: v.intent,
   }))
 

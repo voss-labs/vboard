@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   decideRegistrationsAction,
   setPostStatusAction,
+  updatePostAction,
 } from "@/app/dashboard/c/[slug]/posts/actions"
 
 const mocks = vi.hoisted(() => ({
@@ -10,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   getPostById: vi.fn(),
   setPostStatus: vi.fn(),
   decideRegistrations: vi.fn(),
+  hasRegistrations: vi.fn(),
+  updatePost: vi.fn(),
   revalidate: vi.fn(),
 }))
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }))
@@ -25,10 +28,11 @@ vi.mock("@/db/queries/posts", () => ({
   createPost: vi.fn(),
   deletePost: vi.fn(),
   setPostPinned: vi.fn(),
-  updatePost: vi.fn(),
+  updatePost: mocks.updatePost,
 }))
 vi.mock("@/db/queries/registrations", () => ({
   decideRegistrations: mocks.decideRegistrations,
+  hasRegistrations: mocks.hasRegistrations,
 }))
 const postId = "c7c1339b-cf14-471a-96e8-82d8f93901df"
 const registrationId = "b6ec664f-9905-4d39-b5c0-fc3434dc6b81"
@@ -39,6 +43,28 @@ function form(fields: Record<string, string | string[]>) {
     for (const entry of Array.isArray(value) ? value : [value])
       data.append(key, entry)
   return data
+}
+const question = {
+  id: "5b0c4a0e-6d1f-4c58-9d7e-2f3a1b4c5d6e",
+  type: "choice" as const,
+  label: "Which role?",
+  required: true,
+  options: ["Frontend", "Backend"],
+}
+function editForm(questions: unknown[]) {
+  return form({
+    slug: "club-a",
+    postId,
+    title: "Interview day",
+    body: "Bring a laptop.",
+    visibility: "public",
+    isEvent: "on",
+    startsAt: "2030-01-01T10:00",
+    endsAt: "2030-01-01T12:00",
+    locationVisibility: "public",
+    registrationQuestions: JSON.stringify(questions),
+    intent: "save",
+  })
 }
 beforeEach(() => {
   vi.resetAllMocks()
@@ -53,6 +79,63 @@ beforeEach(() => {
     communityId: "community-a",
     slug: "event-a",
     isEvent: true,
+    registrationQuestions: [question],
+  })
+})
+describe("registration question edits", () => {
+  it("refuses to drop an answered question and saves nothing", async () => {
+    mocks.hasRegistrations.mockResolvedValue(true)
+    const result = await updatePostAction(null, editForm([]))
+    expect(result).toEqual({
+      ok: false,
+      error: expect.stringContaining("already answered"),
+    })
+    expect(mocks.updatePost).not.toHaveBeenCalled()
+    expect(mocks.revalidate).not.toHaveBeenCalled()
+  })
+  it("refuses to drop an answered choice", async () => {
+    mocks.hasRegistrations.mockResolvedValue(true)
+    const result = await updatePostAction(
+      null,
+      editForm([{ ...question, options: ["Frontend", "Design"] }])
+    )
+    expect(result.ok).toBe(false)
+    expect(mocks.updatePost).not.toHaveBeenCalled()
+  })
+  it("saves added choices and questions after students have answered", async () => {
+    mocks.hasRegistrations.mockResolvedValue(true)
+    const next = [
+      {
+        ...question,
+        label: "Which team?",
+        options: [...question.options, "Design"],
+      },
+      {
+        id: "0f6f8f52-6a43-4a57-8c0e-7b1d2e3f4a5b",
+        type: "text",
+        label: "About you",
+        required: false,
+        minWords: 0,
+        maxWords: 300,
+      },
+    ]
+    await updatePostAction(null, editForm(next))
+    expect(mocks.updatePost).toHaveBeenCalledWith(
+      ctx,
+      "community-a",
+      postId,
+      expect.objectContaining({ registrationQuestions: next })
+    )
+  })
+  it("lets any question go while nobody has registered", async () => {
+    mocks.hasRegistrations.mockResolvedValue(false)
+    await updatePostAction(null, editForm([]))
+    expect(mocks.updatePost).toHaveBeenCalledWith(
+      ctx,
+      "community-a",
+      postId,
+      expect.objectContaining({ registrationQuestions: [] })
+    )
   })
 })
 describe("event action ownership boundary", () => {

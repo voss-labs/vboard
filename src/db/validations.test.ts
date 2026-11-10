@@ -17,8 +17,32 @@ const base = {
   registrationOpensAt: "",
   registrationClosesAt: "",
   capacity: "",
+  registrationQuestions: "",
   intent: "publish",
 }
+const event = {
+  ...base,
+  isEvent: "on",
+  startsAt: "2026-10-01T10:00",
+  endsAt: "2026-10-01T12:00",
+}
+const questions = [
+  {
+    id: "5f0c1a52-3b7e-4c7a-9d1e-2a6b8c4d0e11",
+    type: "choice",
+    label: "Which role do you want to interview for?",
+    required: true,
+    options: ["Frontend", "Backend"],
+  },
+  {
+    id: "8a2d4e61-9c3f-4b5a-a7d2-1e0f3c5b7d22",
+    type: "text",
+    label: "Tell us about yourself",
+    required: true,
+    minWords: 200,
+    maxWords: 300,
+  },
+]
 
 describe("postFormSchema", () => {
   it("accepts a text post and clears event fields", () => {
@@ -71,6 +95,59 @@ describe("postFormSchema", () => {
       capacity: "2.5",
     })
     expect(result.success).toBe(false)
+  })
+})
+
+describe("postFormSchema registration questions", () => {
+  it("parses questions sent as a JSON string", () => {
+    const result = postFormSchema.safeParse({
+      ...event,
+      registrationQuestions: JSON.stringify(questions),
+    })
+    expect(result.success).toBe(true)
+    expect(result.data?.registrationQuestions).toEqual(questions)
+  })
+
+  it("treats a blank field as no questions", () => {
+    expect(postFormSchema.parse(event).registrationQuestions).toEqual([])
+  })
+
+  it("rejects malformed JSON", () => {
+    const result = postFormSchema.safeParse({
+      ...event,
+      registrationQuestions: '[{"id":',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects JSON that is not a list of valid questions", () => {
+    for (const value of [
+      "{}",
+      '"text"',
+      JSON.stringify([{ ...questions[0], options: ["Frontend"] }]),
+      JSON.stringify([{ ...questions[1], minWords: 400 }]),
+      JSON.stringify([questions[0], questions[0]]),
+    ])
+      expect(
+        postFormSchema.safeParse({ ...event, registrationQuestions: value })
+          .success
+      ).toBe(false)
+  })
+
+  it("drops questions from an announcement", () => {
+    const result = postFormSchema.safeParse({
+      ...base,
+      registrationQuestions: JSON.stringify(questions),
+    })
+    expect(result.success).toBe(true)
+    expect(result.data?.registrationQuestions).toEqual([])
+  })
+
+  it("requires the field to be a string", () => {
+    expect(
+      postFormSchema.safeParse({ ...event, registrationQuestions: questions })
+        .success
+    ).toBe(false)
   })
 })
 

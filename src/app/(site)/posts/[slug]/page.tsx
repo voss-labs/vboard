@@ -5,18 +5,30 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, CalendarDays, Lock, MapPin, Users } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
+import { RegistrationForm } from "@/components/registration-form"
 import { RegistrationPanel } from "@/components/registration-panel"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button-variants"
-import { Card, CardContent } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { getPostDetailBySlug, type FeedPost } from "@/db/queries/posts"
 import { getRegistration } from "@/db/queries/registrations"
 import { formatEventRange, formatShortDate } from "@/lib/format"
 import {
+  canRegisterNow,
   canSeeLocation,
   registrationAvailability,
   seatsLeft,
 } from "@/lib/registration"
+import type {
+  RegistrationAnswers,
+  RegistrationQuestion,
+} from "@/lib/registration-form"
 import { communityCan } from "@/lib/rbac"
 import { getSessionUser, roleIn } from "@/lib/session"
 
@@ -49,6 +61,14 @@ export default async function PostPage({ params }: Props) {
     : null
   const status = registration?.status ?? null
   const showLocation = canSeeLocation(post, { status, canManage })
+  const availability = registrationAvailability(post, post.seatsTaken)
+  const questions = post.registrationQuestions
+  const showForm =
+    !!user && questions.length > 0 && canRegisterNow(status, availability)
+  const answers =
+    registration && registration.status !== "cancelled"
+      ? registration.answers
+      : null
 
   return (
     <article className="mx-auto max-w-6xl space-y-6">
@@ -113,17 +133,24 @@ export default async function PostPage({ params }: Props) {
             : "max-w-3xl"
         }
       >
-        <section
-          className="order-2 min-w-0 space-y-4 lg:order-1"
-          aria-labelledby="about-heading"
-        >
-          <h2 id="about-heading" className="text-sm font-semibold">
-            {post.isEvent ? "About this event" : "Announcement"}
-          </h2>
-          <p className="max-w-[72ch] text-base leading-7 break-words whitespace-pre-line">
-            {post.body}
-          </p>
-        </section>
+        <div className="order-2 min-w-0 space-y-8 lg:order-1">
+          <section className="space-y-4" aria-labelledby="about-heading">
+            <h2 id="about-heading" className="text-sm font-semibold">
+              {post.isEvent ? "About this event" : "Announcement"}
+            </h2>
+            <p className="max-w-[72ch] text-base leading-7 break-words whitespace-pre-line">
+              {post.body}
+            </p>
+          </section>
+          {showForm && (
+            <RegistrationForm
+              postId={post.id}
+              questions={questions}
+              requiresApproval={post.requiresApproval}
+            />
+          )}
+          {answers && <YourAnswers questions={questions} answers={answers} />}
+        </div>
         {post.isEvent && (
           <aside
             className="order-1 min-w-0 space-y-4 lg:sticky lg:top-24 lg:order-2"
@@ -137,8 +164,9 @@ export default async function PostPage({ params }: Props) {
               slug={post.slug}
               signedIn={!!user}
               requiresApproval={post.requiresApproval}
-              availability={registrationAvailability(post, post.seatsTaken)}
+              availability={availability}
               status={status}
+              questionCount={questions.length}
               closesOn={
                 post.registrationClosesAt
                   ? formatShortDate(post.registrationClosesAt)
@@ -225,6 +253,41 @@ function EventMeta({
               </dd>
             </div>
           </div>
+        </dl>
+      </CardContent>
+    </Card>
+  )
+}
+
+function YourAnswers({
+  questions,
+  answers,
+}: {
+  questions: RegistrationQuestion[]
+  answers: RegistrationAnswers
+}) {
+  const answered = questions.filter((question) => answers[question.id])
+  if (answered.length === 0) return null
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Your answers</CardTitle>
+        <CardDescription>
+          Shared with the community team that runs this event.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <dl className="space-y-5 text-sm">
+          {answered.map((question) => (
+            <div key={question.id} className="space-y-1">
+              <dt className="text-muted-foreground text-xs break-words">
+                {question.label}
+              </dt>
+              <dd className="leading-relaxed break-words whitespace-pre-line">
+                {answers[question.id]}
+              </dd>
+            </div>
+          ))}
         </dl>
       </CardContent>
     </Card>
