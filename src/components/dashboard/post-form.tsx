@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ActionForm } from "@/components/action-form"
+import { QuestionBuilder } from "@/components/dashboard/question-builder"
 import { FormSelect } from "@/components/form-select"
 import { SubmitButton } from "@/components/submit-button"
 import {
@@ -23,6 +24,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import type { ActionResult } from "@/lib/action-result"
+import type { RegistrationQuestion } from "@/lib/registration-form"
 
 type Defaults = {
   title: string
@@ -38,6 +40,7 @@ type Defaults = {
   registrationClosesAt: string
   capacity: string
   requiresApproval: boolean
+  registrationQuestions: RegistrationQuestion[]
 }
 
 export const EMPTY_POST: Defaults = {
@@ -54,6 +57,7 @@ export const EMPTY_POST: Defaults = {
   registrationClosesAt: "",
   capacity: "",
   requiresApproval: false,
+  registrationQuestions: [],
 }
 
 export function PostForm({
@@ -63,6 +67,7 @@ export function PostForm({
   defaults,
   canPublish,
   mode,
+  questionsLocked = false,
 }: {
   action: (
     prev: ActionResult | null,
@@ -73,6 +78,7 @@ export function PostForm({
   defaults: Defaults
   canPublish: boolean
   mode: "create" | "edit"
+  questionsLocked?: boolean
 }) {
   const [isEvent, setIsEvent] = useState(defaults.isEvent)
 
@@ -193,6 +199,23 @@ export function PostForm({
                   />
                 </Field>
               </FieldGroup>
+            </CardContent>
+          </Card>
+        )}
+        {isEvent && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Registration questions</CardTitle>
+              <CardDescription>
+                Students answer these when they register. Organizers of this
+                community read the answers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <QuestionBuilder
+                initial={defaults.registrationQuestions}
+                locked={questionsLocked}
+              />
             </CardContent>
           </Card>
         )}

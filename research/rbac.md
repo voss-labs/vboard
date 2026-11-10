@@ -16,6 +16,8 @@ Every server mutation validates explicit writable fields with schema-derived Zod
 
 Public discovery/detail/calendar use checked projections. Gated location stays redacted until approval/attendance or current operator access. Attendee and team identities are scoped operational projections. Own registration history preserves minimal event summaries after withdrawal or soft deletion without exposing unpublished bodies or other participants.
 
+Registration answers follow the registration row. The student reads their own; current Organizers and Leads of the hosting community and Super admin read every answer for that event; nobody else reads any. Answers are validated in SQL against the event's questions, cannot change after submission except by cancelling and registering again, and never enter the audit log. Once an event has a registration, its questions and choices can be reworded or added to but not removed.
+
 Event registration counts approved/attended seats. Registration, approval and capacity changes use the same event transaction lock. Bulk decisions reject the whole batch if any submitted row is missing, belongs to another event, or cannot make that transition. Students may retry only cancelled registrations; rejected requests cannot be retried.
 
 Former site authority, additional committee roles and permission extensions are retired from runtime and privately archived by migrations. Historical audit details remain unchanged. Deferred ideas belong in `research/future.md` and confer no current authority.

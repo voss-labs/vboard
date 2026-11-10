@@ -11,10 +11,14 @@ import {
   setPostStatus,
   updatePost,
 } from "@/db/queries/posts"
-import { decideRegistrations } from "@/db/queries/registrations"
+import {
+  decideRegistrations,
+  hasRegistrations,
+} from "@/db/queries/registrations"
 import { firstIssue, postFormSchema } from "@/db/validations"
 import { done, fail, type ActionResult } from "@/lib/action-result"
 import { attemptAction } from "@/lib/action-error"
+import { keepsAnsweredQuestions } from "@/lib/registration-form"
 import { randomSuffix, uniqueSlug } from "@/lib/slug"
 import {
   actionCommunityAccess,
@@ -38,6 +42,7 @@ function readPostForm(formData: FormData) {
     registrationClosesAt: get("registrationClosesAt"),
     capacity: get("capacity"),
     requiresApproval: get("requiresApproval"),
+    registrationQuestions: get("registrationQuestions"),
     intent: get("intent") || "save",
   })
 }
@@ -104,6 +109,16 @@ export async function updatePostAction(
     withDb({ userId: access.user.id }, async (ctx) => {
       const post = await postInCommunity(ctx, access, formData.get("postId"))
       if (!post) return fail("Post not found.")
+      if (
+        !keepsAnsweredQuestions(
+          post.registrationQuestions,
+          data.registrationQuestions
+        ) &&
+        (await hasRegistrations(ctx, post.id))
+      )
+        return fail(
+          "Students have already answered this form. You can reword questions and add new questions or choices, but not remove them."
+        )
       await updatePost(ctx, access.community.id, post.id, data)
       postSlug = post.slug
       postId = post.id

@@ -11,7 +11,7 @@ Things intentionally out of v1. Don't add until the trigger condition is met.
 
 ## Features
 
-- **Custom registration form fields** — community Organizers attach event-specific questions to the registration form. Fully replaces Google Forms. v2 priority.
+- More for registration questions — further question types (multiple choice, short text, dates), file uploads, and editing answers after submitting. Add when an event needs one.
 - Roll number CSV validation — admin uploads the official VIT student list, signups must match a row. Add when fake-account spam becomes a real problem.
 - Push / email notifications on event reminders, approval decisions.
 - Inter-college / alumni `guest` role — opens vboard to non-`@vit.edu.in` users for open events.

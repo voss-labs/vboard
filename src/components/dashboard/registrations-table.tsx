@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react"
 import { SearchIcon } from "lucide-react"
-import { ActionForm } from "@/components/action-form"
 import { RecordTable } from "@/components/dashboard/record-table"
-import { Button } from "@/components/ui/button"
+import { RegistrationBulkActions } from "@/components/dashboard/registration-bulk-actions"
+import { RegistrationDetail } from "@/components/dashboard/registration-detail"
 import { EmptyState, StatusBadge } from "@/components/dashboard/ui"
-import { SubmitButton } from "@/components/submit-button"
+import { FormSelect } from "@/components/form-select"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,7 +18,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { decideRegistrationsAction } from "@/app/dashboard/c/[slug]/posts/actions"
+import type {
+  RegistrationAnswers,
+  RegistrationQuestion,
+} from "@/lib/registration-form"
 
 export type RegistrationRow = {
   id: string
@@ -27,6 +31,7 @@ export type RegistrationRow = {
   department: string | null
   status: string
   registeredAt: string
+  answers: RegistrationAnswers
 }
 
 const FILTERS = [
@@ -38,9 +43,11 @@ const FILTERS = [
   "cancelled",
   "no_show",
 ]
+const ANY = "all"
 
 export function RegistrationsTable({
   rows,
+  questions,
   slug,
   postId,
   canDecide,
@@ -48,6 +55,7 @@ export function RegistrationsTable({
   initialFilter,
 }: {
   rows: RegistrationRow[]
+  questions: RegistrationQuestion[]
   slug: string
   postId: string
   canDecide: boolean
@@ -59,6 +67,10 @@ export function RegistrationsTable({
   )
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [choices, setChoices] = useState<Record<string, string>>({})
+  const [resetKey, setResetKey] = useState(0)
+  const [open, setOpen] = useState<{ id: string; index: number } | null>(null)
+  const choiceQuestions = questions.filter((q) => q.type === "choice")
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rows.length }
@@ -68,15 +80,33 @@ export function RegistrationsTable({
 
   const visible = rows.filter((r) => {
     if (filter !== "all" && r.status !== filter) return false
+    if (
+      choiceQuestions.some(
+        (c) =>
+          (choices[c.id] ?? ANY) !== ANY && r.answers[c.id] !== choices[c.id]
+      )
+    )
+      return false
     const q = query.trim().toLowerCase()
     if (!q) return true
-    return [r.name, r.email, r.rollNumber ?? ""].some((v) =>
-      v.toLowerCase().includes(q)
-    )
+    return [
+      r.name,
+      r.email,
+      r.rollNumber ?? "",
+      ...Object.values(r.answers),
+    ].some((v) => v.toLowerCase().includes(q))
   })
 
-  const allSelected =
-    visible.length > 0 && visible.every((r) => selected.has(r.id))
+  const openRow = open ? (rows.find((r) => r.id === open.id) ?? null) : null
+  const at = open ? visible.findIndex((r) => r.id === open.id) : -1
+  const previous = open ? visible[(at < 0 ? open.index : at) - 1] : undefined
+  const next = open ? visible[at < 0 ? open.index : at + 1] : undefined
+  const show = (row: RegistrationRow | undefined) =>
+    setOpen(
+      row
+        ? { id: row.id, index: visible.findIndex((r) => r.id === row.id) }
+        : null
+    )
   const toggle = (id: string, on: boolean) =>
     setSelected((prev) => {
       const next = new Set(prev)
@@ -86,7 +116,6 @@ export function RegistrationsTable({
     })
 
   const selectable = canDecide || canCheckIn
-  const none = selected.size === 0
 
   return (
     <div className="flex flex-col">
@@ -113,109 +142,58 @@ export function RegistrationsTable({
             ))}
           </TabsList>
         </Tabs>
-        <div className="relative w-full sm:max-w-sm">
-          <SearchIcon className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-          <Input
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setSelected(new Set())
-            }}
-            placeholder="Name, email, roll no."
-            aria-label="Search registrations"
-            className="pl-8"
-          />
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full sm:max-w-sm">
+            <SearchIcon className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+            <Input
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setSelected(new Set())
+              }}
+              placeholder={
+                questions.length
+                  ? "Name, email, roll no. or answer"
+                  : "Name, email, roll no."
+              }
+              aria-label="Search registrations"
+              className="pl-8"
+            />
+          </div>
+          {choiceQuestions.map((c) => (
+            <FormSelect
+              key={`${c.id}-${resetKey}`}
+              name={`choice-${c.id}`}
+              label={`Filter by ${c.label}`}
+              defaultValue={choices[c.id] ?? ANY}
+              className="w-full min-w-0 sm:w-auto sm:max-w-xs"
+              onValueChange={(value) => {
+                setChoices((prev) => ({ ...prev, [c.id]: value }))
+                setSelected(new Set())
+              }}
+              items={[
+                { value: ANY, label: `All: ${c.label}` },
+                ...c.options.map((option) => ({
+                  value: option,
+                  label: option,
+                })),
+              ]}
+            />
+          ))}
         </div>
       </div>
 
       {selectable && (
-        <ActionForm
-          action={decideRegistrationsAction}
-          onDone={() => setSelected(new Set())}
-          className="bg-muted/40 flex flex-wrap items-center gap-2 border-b px-4 py-3 md:px-6 [&>[role=alert]]:w-full"
-        >
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="postId" value={postId} />
-          {[...selected].map((id) => (
-            <input key={id} type="hidden" name="registrationId" value={id} />
-          ))}
-          <label className="flex min-h-11 items-center gap-2 pr-2 text-xs">
-            <Checkbox
-              checked={allSelected}
-              onCheckedChange={(on) =>
-                setSelected(
-                  on ? new Set(visible.map((row) => row.id)) : new Set()
-                )
-              }
-              aria-label="Select all visible registrations"
-            />
-            Select visible
-          </label>
-          <span
-            aria-live="polite"
-            className="text-muted-foreground mr-2 text-sm tabular-nums"
-          >
-            {selected.size} selected
-          </span>
-          {canDecide && (
-            <>
-              <SubmitButton
-                name="decision"
-                value="approve"
-                size="sm"
-                disabled={none}
-                pendingLabel="Applying…"
-              >
-                Approve
-              </SubmitButton>
-              <SubmitButton
-                name="decision"
-                value="reject"
-                size="sm"
-                variant="destructive"
-                disabled={none}
-                pendingLabel="Applying…"
-              >
-                Reject
-              </SubmitButton>
-            </>
-          )}
-          {canCheckIn && (
-            <>
-              <SubmitButton
-                name="decision"
-                value="checkin"
-                size="sm"
-                variant="secondary"
-                disabled={none}
-                pendingLabel="Applying…"
-              >
-                Check in
-              </SubmitButton>
-              <SubmitButton
-                name="decision"
-                value="noshow"
-                size="sm"
-                variant="outline"
-                disabled={none}
-                pendingLabel="Applying…"
-              >
-                No-show
-              </SubmitButton>
-              <SubmitButton
-                name="decision"
-                value="reset"
-                size="sm"
-                variant="ghost"
-                disabled={none}
-                pendingLabel="Applying…"
-              >
-                Undo check-in
-              </SubmitButton>
-            </>
-          )}
-        </ActionForm>
+        <RegistrationBulkActions
+          slug={slug}
+          postId={postId}
+          selected={selected}
+          visibleIds={visible.map((r) => r.id)}
+          canDecide={canDecide}
+          canCheckIn={canCheckIn}
+          onSelectedChange={setSelected}
+        />
       )}
 
       <p
@@ -238,7 +216,7 @@ export function RegistrationsTable({
           body={
             rows.length === 0
               ? "Requests will appear here when people register."
-              : "Try a different status, name, email or roll number."
+              : "Try a different status, search or answer filter."
           }
           action={
             rows.length > 0 ? (
@@ -247,6 +225,8 @@ export function RegistrationsTable({
                 onClick={() => {
                   setFilter("all")
                   setQuery("")
+                  setChoices({})
+                  setResetKey((key) => key + 1)
                   setSelected(new Set())
                 }}
               >
@@ -267,8 +247,20 @@ export function RegistrationsTable({
               <TableHead className={selectable ? "" : "pl-6"}>Name</TableHead>
               <TableHead>Roll no.</TableHead>
               <TableHead>Dept</TableHead>
+              {choiceQuestions.map((c) => (
+                <TableHead key={c.id} title={c.label}>
+                  <span className="block max-w-48 truncate">{c.label}</span>
+                </TableHead>
+              ))}
               <TableHead>Registered</TableHead>
-              <TableHead className="pr-6">Status</TableHead>
+              <TableHead className={questions.length ? "" : "pr-6"}>
+                Status
+              </TableHead>
+              {questions.length > 0 && (
+                <TableHead className="pr-6">
+                  <span className="sr-only">Answers</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -301,19 +293,53 @@ export function RegistrationsTable({
                 <TableCell data-label="Department">
                   {r.department ?? "—"}
                 </TableCell>
+                {choiceQuestions.map((c) => (
+                  <TableCell key={c.id} data-label={c.label}>
+                    {r.answers[c.id] ?? "—"}
+                  </TableCell>
+                ))}
                 <TableCell
                   data-label="Registered"
                   className="text-muted-foreground"
                 >
                   {r.registeredAt}
                 </TableCell>
-                <TableCell data-label="Status" className="pr-6">
+                <TableCell
+                  data-label="Status"
+                  className={questions.length ? "" : "pr-6"}
+                >
                   <StatusBadge status={r.status} />
                 </TableCell>
+                {questions.length > 0 && (
+                  <TableCell className="pr-6 md:text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => show(r)}
+                      aria-label={`View answers from ${r.name}`}
+                    >
+                      View
+                    </Button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </RecordTable>
+      )}
+      {questions.length > 0 && (
+        <RegistrationDetail
+          row={openRow}
+          questions={questions}
+          slug={slug}
+          postId={postId}
+          canDecide={canDecide}
+          position={at < 0 ? null : at + 1}
+          total={visible.length}
+          onClose={() => setOpen(null)}
+          onPrevious={previous ? () => show(previous) : undefined}
+          onNext={next ? () => show(next) : undefined}
+        />
       )}
     </div>
   )

@@ -3,11 +3,13 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { withDb } from "@/db"
 import {
-  registerForEvent,
   cancelRegistration,
+  getEventQuestions,
+  registerForEvent,
 } from "@/db/queries/registrations"
 import { done, fail, type ActionResult } from "@/lib/action-result"
 import { attemptAction } from "@/lib/action-error"
+import { validateAnswers } from "@/lib/registration-form"
 import { getSessionUser } from "@/lib/session"
 const input = z.object({ postId: z.uuid() }).strict()
 function revalidate() {
@@ -25,7 +27,16 @@ export async function registerAction(
   if (!parsed.success) return fail("Unknown event.")
   const result = await attemptAction(() =>
     withDb({ userId: user.id }, async (ctx) => {
-      const registration = await registerForEvent(ctx, parsed.data.postId)
+      const questions = await getEventQuestions(ctx, parsed.data.postId)
+      const checked = validateAnswers(questions, (id) =>
+        formData.get(`answer.${id}`)
+      )
+      if (!checked.ok) return fail(checked.error)
+      const registration = await registerForEvent(
+        ctx,
+        parsed.data.postId,
+        checked.answers
+      )
       return done(
         registration.status === "pending"
           ? "Request sent. You will see the decision here."

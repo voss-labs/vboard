@@ -5,11 +5,13 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core"
+import type { RegistrationQuestion } from "@/lib/registration-form"
 import { user } from "./auth"
 import { community } from "./communities"
 import {
@@ -48,6 +50,10 @@ export const post = pgTable(
     }),
     capacity: integer("capacity"),
     requiresApproval: boolean("requires_approval").notNull().default(false),
+    registrationQuestions: jsonb("registration_questions")
+      .$type<RegistrationQuestion[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -66,6 +72,10 @@ export const post = pgTable(
     check(
       "post_dates_order",
       sql`(ends_at IS NULL OR ends_at >= starts_at) AND (registration_opens_at IS NULL OR registration_closes_at IS NULL OR registration_closes_at >= registration_opens_at)`
+    ),
+    check(
+      "post_questions_shape",
+      sql`jsonb_typeof(registration_questions) = 'array' AND (is_event OR registration_questions = '[]'::jsonb)`
     ),
     index("post_community_idx").on(t.communityId),
     index("post_status_idx").on(t.status),

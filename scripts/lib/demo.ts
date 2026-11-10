@@ -1,4 +1,9 @@
 import type { CommunityRole } from "@/lib/rbac"
+import {
+  countWords,
+  type RegistrationAnswers,
+  type RegistrationQuestion,
+} from "@/lib/registration-form"
 import { daysFromNow, type Post } from "./fixtures"
 
 type DemoPost = Omit<Post, "id" | "authorId">
@@ -17,6 +22,65 @@ const event = (
   createdAt: daysFromNow(-14),
   ...p,
 })
+
+const INTERVIEW_QUESTIONS: RegistrationQuestion[] = [
+  {
+    id: "5f0c1a52-3b7e-4c7a-9d1e-2a6b8c4d0e11",
+    type: "choice",
+    label: "Which role do you want to interview for?",
+    required: true,
+    options: [
+      "Actor",
+      "Script writer",
+      "Music and percussion",
+      "Direction",
+      "Backstage and props",
+    ],
+  },
+  {
+    id: "8a2d4e61-9c3f-4b5a-a7d2-1e0f3c5b7d22",
+    type: "text",
+    label: "Tell us about yourself",
+    required: true,
+    minWords: 30,
+    maxWords: 300,
+  },
+]
+
+const ABOUT_SENTENCES = [
+  "I have been part of my school drama team since the eighth standard and performed in two annual day productions.",
+  "Street theatre interests me because it reaches people who would never buy a ticket to an auditorium show.",
+  "Last year I helped write a short skit on road safety for our society's cultural evening.",
+  "I am comfortable performing in Marathi, Hindi and English, and I enjoy switching between them on stage.",
+  "I play the dholki and have accompanied folk performances at two inter-college festivals.",
+  "Balancing rehearsals with lab submissions taught me to plan my week carefully and show up on time.",
+  "I would like to learn how a script changes once it meets a live crowd on a college lawn.",
+  "My friends say I am the loudest voice in any room, which I hope finally becomes useful here.",
+  "I can commit to evening rehearsals on weekdays and full days on weekends through the circuit.",
+]
+
+export function demoAnswers(
+  questions: RegistrationQuestion[],
+  i: number
+): RegistrationAnswers {
+  const answers: RegistrationAnswers = {}
+  for (const q of questions) {
+    if (q.type === "choice") {
+      answers[q.id] = q.options[i % q.options.length]
+      continue
+    }
+    let text = ""
+    for (
+      let n = 0;
+      n < ABOUT_SENTENCES.length && countWords(text) < q.minWords + 10;
+      n++
+    )
+      text =
+        `${text} ${ABOUT_SENTENCES[(i + n * 2) % ABOUT_SENTENCES.length]}`.trim()
+    answers[q.id] = text.split(" ").slice(0, q.maxWords).join(" ")
+  }
+  return answers
+}
 
 export const demoPosts: DemoPost[] = [
   event({
@@ -70,6 +134,7 @@ export const demoPosts: DemoPost[] = [
     locationVisibility: "after_approval",
     capacity: 25,
     requiresApproval: true,
+    registrationQuestions: INTERVIEW_QUESTIONS,
     registrationCount: 21,
     createdAt: daysFromNow(-3),
   }),

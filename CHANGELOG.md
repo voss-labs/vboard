@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Event registration questions: Organizers add required or optional single-choice and long-text questions to an event; students answer when registering, and the hosting team reads the answers in the registrations view and the CSV export.
 - Sign in with VOSS (OIDC, PKCE) like VERP; passwords removed. Local persona switcher behind `VBOARD_DEV_AUTH`.
 - Five-layer RBAC: visitor, student, community lead / manager / volunteer, site admin, super admin. Capabilities in `src/lib/rbac.ts`, documented in `research/rbac.md`.
 - Schema: `profile`, `community`, `community_member`, `post`, `registration`, `audit_log`.

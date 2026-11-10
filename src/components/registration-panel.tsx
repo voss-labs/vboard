@@ -11,9 +11,10 @@ import {
   cancelRegistrationAction,
   registerAction,
 } from "@/app/(site)/posts/[slug]/actions"
-import type {
-  RegistrationAvailability,
-  RegistrationStatus,
+import {
+  canRegisterNow,
+  type RegistrationAvailability,
+  type RegistrationStatus,
 } from "@/lib/registration"
 
 type Props = {
@@ -25,6 +26,7 @@ type Props = {
   status: RegistrationStatus | null
   closesOn: string | null
   seatsLeft: number | null
+  questionCount: number
 }
 
 const STATUS_COPY: Partial<Record<RegistrationStatus, string>> = {
@@ -52,8 +54,7 @@ export function RegistrationPanel(props: Props) {
     props.status && props.status !== "cancelled"
       ? STATUS_COPY[props.status]
       : AVAILABILITY_COPY[props.availability]
-  const canRegister =
-    !active && props.status !== "rejected" && props.availability === "open"
+  const canRegister = canRegisterNow(props.status, props.availability)
 
   return (
     <Card className={active ? "ring-brand/35" : undefined}>
@@ -84,9 +85,11 @@ export function RegistrationPanel(props: Props) {
             {props.status === "pending"
               ? "The community team will review your request. Check its status in your workspace."
               : canRegister
-                ? props.requiresApproval
-                  ? "The community team reviews requests before confirming a spot."
-                  : "Register with your VIT account to reserve a spot."
+                ? props.questionCount > 0
+                  ? "The community team asks a few questions with this registration."
+                  : props.requiresApproval
+                    ? "The community team reviews requests before confirming a spot."
+                    : "Register with your VIT account to reserve a spot."
                 : props.status === "approved"
                   ? "Your spot is confirmed. You can find this event in your registrations."
                   : props.status === "attended"
@@ -125,6 +128,14 @@ export function RegistrationPanel(props: Props) {
               size="lg"
             />
           </ActionForm>
+        ) : canRegister && props.questionCount > 0 ? (
+          <a
+            href="#registration-form"
+            className={buttonVariants({ size: "lg", className: "w-full" })}
+          >
+            Answer {props.questionCount}{" "}
+            {props.questionCount === 1 ? "question" : "questions"} to register
+          </a>
         ) : canRegister ? (
           <ActionForm action={registerAction}>
             <input type="hidden" name="postId" value={props.postId} />

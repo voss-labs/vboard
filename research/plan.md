@@ -2,7 +2,7 @@
 
 vboard is the events + community platform for VIT (Vidyalankar Institute of Technology, Mumbai), under voss-labs. Sister project to verp.
 
-The wedge: replace the per-event Google Form workflow with unified, one-click registration. Custom form fields are phase 2.
+The wedge: replace the per-event Google Form workflow with unified, one-click registration. Events that need more ask their own registration questions.
 
 ## Tech Stack
 
@@ -25,6 +25,7 @@ What's in:
 - Flat community membership — anyone in = full rights for that community
 - Unified `post` model — text announcement OR event, depending on whether event fields are filled
 - One-click direct registration with optional approval flow
+- Event registration questions: an Organizer adds single-choice and long-text questions to an event, each required or optional, and students answer them when they register
 - Community admin dashboard: see / approve registrations per event
 - Site-level admin role for platform-wide moderation
 
@@ -122,6 +123,7 @@ vboard-owned tables:
 - registrationOpensAt, registrationClosesAt (timestamptz, nullable)
 - capacity (int, nullable)
 - requiresApproval (bool, default false)
+- registrationQuestions (jsonb array, default empty) — choice questions carry their options, text questions carry minimum and maximum word counts; events only
 - timestamps
 
 Validation enforced at server boundary (Zod): if `isEvent = true`, `startsAt` and `endsAt` are required.
@@ -130,6 +132,7 @@ Validation enforced at server boundary (Zod): if `isEvent = true`, `startsAt` an
 
 - postId, userId (unique together) — only valid when post.isEvent = true
 - status (enum: `pending` | `approved` | `rejected` | `cancelled` | `attended` | `no_show`)
+- answers (jsonb object keyed by question id, default empty) — written at registration, immutable afterwards
 - registeredAt, timestamps
 
 ## Build Phases

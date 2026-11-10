@@ -47,6 +47,15 @@ export function registrationAvailability(
   return "open"
 }
 
+export function canRegisterNow(
+  status: RegistrationStatus | null,
+  availability: RegistrationAvailability
+): boolean {
+  const active =
+    status === "pending" || status === "approved" || status === "attended"
+  return !active && status !== "rejected" && availability === "open"
+}
+
 export function initialStatus(
   post: Pick<RegistrationWindow, "requiresApproval">
 ): RegistrationStatus {

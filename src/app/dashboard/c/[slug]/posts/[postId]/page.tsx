@@ -242,6 +242,7 @@ export default async function ManagePostPage({
                 canDecide={access.can("registration:decide")}
                 canCheckIn={access.can("registration:checkin")}
                 initialFilter={initialFilter ?? "all"}
+                questions={post.registrationQuestions}
                 rows={registrations.map((r) => ({
                   id: r.id,
                   name: r.name,
@@ -250,6 +251,7 @@ export default async function ManagePostPage({
                   department: r.department,
                   status: r.status,
                   registeredAt: formatStamp(r.registeredAt),
+                  answers: r.answers,
                 }))}
               />
             </Panel>
