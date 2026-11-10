@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { LinkedText } from "@/components/linked-text"
 import { getPostDetailBySlug, type FeedPost } from "@/db/queries/posts"
 import { getRegistration } from "@/db/queries/registrations"
 import { formatEventRange, formatShortDate } from "@/lib/format"
@@ -139,7 +140,7 @@ export default async function PostPage({ params }: Props) {
               {post.isEvent ? "About this event" : "Announcement"}
             </h2>
             <p className="max-w-[72ch] text-base leading-7 break-words whitespace-pre-line">
-              {post.body}
+              <LinkedText text={post.body} />
             </p>
           </section>
           {showForm && (
