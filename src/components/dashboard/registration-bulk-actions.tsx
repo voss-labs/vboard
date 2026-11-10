@@ -37,28 +37,31 @@ export function RegistrationBulkActions({
       {[...selected].map((id) => (
         <input key={id} type="hidden" name="registrationId" value={id} />
       ))}
-      <label className="flex min-h-11 items-center gap-2 pr-2 text-xs">
-        <Checkbox
-          checked={allSelected}
-          onCheckedChange={(on) =>
-            onSelectedChange(on ? new Set(visibleIds) : new Set())
-          }
-          aria-label="Select all visible registrations"
-        />
-        Select visible
-      </label>
-      <span
-        aria-live="polite"
-        className="text-muted-foreground mr-2 text-sm tabular-nums"
-      >
-        {selected.size} selected
-      </span>
+      <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+        <label className="flex min-h-11 items-center gap-2 pr-2 text-xs">
+          <Checkbox
+            checked={allSelected}
+            onCheckedChange={(on) =>
+              onSelectedChange(on ? new Set(visibleIds) : new Set())
+            }
+            aria-label="Select all visible registrations"
+          />
+          Select visible
+        </label>
+        <span
+          aria-live="polite"
+          className="text-muted-foreground text-sm tabular-nums sm:mr-2"
+        >
+          {selected.size} selected
+        </span>
+      </div>
       {canDecide && (
         <>
           <SubmitButton
             name="decision"
             value="approve"
             size="sm"
+            className="flex-1 sm:flex-none"
             disabled={none}
             pendingLabel="Applying…"
           >
@@ -68,6 +71,7 @@ export function RegistrationBulkActions({
             name="decision"
             value="reject"
             size="sm"
+            className="flex-1 sm:flex-none"
             variant="destructive"
             disabled={none}
             pendingLabel="Applying…"
@@ -82,6 +86,7 @@ export function RegistrationBulkActions({
             name="decision"
             value="checkin"
             size="sm"
+            className="flex-1 sm:flex-none"
             variant="secondary"
             disabled={none}
             pendingLabel="Applying…"
@@ -92,6 +97,7 @@ export function RegistrationBulkActions({
             name="decision"
             value="noshow"
             size="sm"
+            className="flex-1 sm:flex-none"
             variant="outline"
             disabled={none}
             pendingLabel="Applying…"
@@ -102,6 +108,7 @@ export function RegistrationBulkActions({
             name="decision"
             value="reset"
             size="sm"
+            className="flex-1 sm:flex-none"
             variant="ghost"
             disabled={none}
             pendingLabel="Applying…"

@@ -149,6 +149,7 @@ export function RegistrationDetail({
                     <SubmitButton
                       name="decision"
                       value="approve"
+                      className="flex-1 sm:flex-none"
                       pendingLabel="Applying…"
                     >
                       Approve
@@ -159,6 +160,7 @@ export function RegistrationDetail({
                       name="decision"
                       value="reject"
                       variant="destructive"
+                      className="flex-1 sm:flex-none"
                       pendingLabel="Applying…"
                     >
                       Reject

@@ -325,13 +325,13 @@ export function PostForm({
           </CardContent>
         </Card>
       </div>
-      <div className="bg-background/95 sticky bottom-0 z-10 col-span-full flex flex-wrap items-center justify-between gap-3 border-t py-4 backdrop-blur-sm">
-        <p className="text-muted-foreground text-xs">
+      <div className="bg-background/95 sticky bottom-0 z-10 col-span-full flex flex-wrap items-center justify-between gap-3 border-t py-3 backdrop-blur-sm sm:py-4">
+        <p className="text-muted-foreground text-xs max-sm:sr-only">
           {mode === "create"
             ? "Save a draft to finish later, or publish when ready."
             : "Changes apply when you save."}
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full gap-2 sm:w-auto sm:flex-wrap [&>button]:flex-1 sm:[&>button]:flex-none">
           {mode === "create" ? (
             <>
               {canPublish && (
