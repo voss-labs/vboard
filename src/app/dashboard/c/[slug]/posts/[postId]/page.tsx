@@ -27,6 +27,7 @@ import { LinkedText } from "@/components/linked-text"
 import { getPostById } from "@/db/queries/posts"
 import { listRegistrations } from "@/db/queries/registrations"
 import { formatEventRange, formatStamp } from "@/lib/format"
+import { divisionOf, studyYearLabel } from "@/lib/profile"
 import { requireCommunityAccess } from "@/lib/session"
 import {
   deletePostAction,
@@ -250,6 +251,9 @@ export default async function ManagePostPage({
                   email: r.email,
                   rollNumber: r.rollNumber,
                   department: r.department,
+                  division: divisionOf(r.rollNumber),
+                  year: studyYearLabel(r.cohortYear),
+                  bio: r.bio,
                   status: r.status,
                   registeredAt: formatStamp(r.registeredAt),
                   answers: r.answers,

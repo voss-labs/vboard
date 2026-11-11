@@ -53,9 +53,37 @@ export function parseRollNumber(raw: string): ParsedRollNumber | null {
   }
 }
 
+export const STUDY_YEARS = [1, 2, 3, 4] as const
+
+export type StudyYear = (typeof STUDY_YEARS)[number]
+
+export const STUDY_YEAR_LABELS: Record<StudyYear, string> = {
+  1: "First year",
+  2: "Second year",
+  3: "Third year",
+  4: "Fourth year",
+}
+
+function academicStart(on: Date): number {
+  return on.getFullYear() - (on.getMonth() < 5 ? 1 : 0)
+}
+
 export function expectedYear(admissionYear: number, on: Date): Year | null {
-  const academicStart = on.getFullYear() - (on.getMonth() < 5 ? 1 : 0)
-  return YEARS[academicStart - admissionYear] ?? null
+  return YEARS[academicStart(on) - admissionYear] ?? null
+}
+
+export function cohortYearFor(year: StudyYear, on: Date): number {
+  return academicStart(on) - (year - 1)
+}
+
+export function studyYear(cohortYear: number, on: Date): StudyYear | null {
+  const year = academicStart(on) - cohortYear + 1
+  return STUDY_YEARS.find((candidate) => candidate === year) ?? null
+}
+
+export function rollStudyYear(rollNumber: string, on: Date): StudyYear | null {
+  const year = currentYear(rollNumber, on)
+  return year ? STUDY_YEARS[YEARS.indexOf(year)] : null
 }
 
 export function currentYear(

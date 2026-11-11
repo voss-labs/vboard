@@ -5,24 +5,21 @@ import {
   Panel,
   RoleBadge,
 } from "@/components/dashboard/ui"
+import { academicDate, academicDay } from "@/lib/profile"
 import { SITE_ROLE_LABEL } from "@/lib/rbac"
+import { studyYear } from "@/lib/roll-number"
 import { requireUser } from "@/lib/session"
 import { ProfileForm } from "@/app/dashboard/profile/profile-form"
 
 export default async function ProfilePage() {
   const user = await requireUser()
-  const academicDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date())
+  const today = academicDate()
 
   return (
     <>
       <PageHeader
         title="Profile"
-        description="Organisers see your name, roll number and department when you register for an event."
+        description="Organizers see your name, roll number, department and year when you register for an event."
       />
 
       <div className="grid gap-6 @5xl/main:grid-cols-[1.5fr_1fr]">
@@ -31,10 +28,15 @@ export default async function ProfilePage() {
           description="Keep these up to date before joining an event."
         >
           <ProfileForm
-            key={[user.rollNumber, user.department, user.bio].join("|")}
+            key={[user.rollNumber, user.cohortYear, user.bio].join("|")}
             initialRollNumber={user.rollNumber}
+            initialYear={
+              user.cohortYear === null
+                ? null
+                : studyYear(user.cohortYear, academicDay(today))
+            }
             initialBio={user.bio}
-            academicDate={academicDate}
+            academicDate={today}
           />
         </Panel>
 

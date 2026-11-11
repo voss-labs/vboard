@@ -74,12 +74,21 @@ export function RegistrationDetail({
                   </Badge>
                 )}
                 {shown.department && (
-                  <Badge variant="outline">{shown.department}</Badge>
+                  <Badge variant="outline">
+                    {shown.department}
+                    {shown.division && ` · Division ${shown.division}`}
+                  </Badge>
                 )}
+                {shown.year && <Badge variant="outline">{shown.year}</Badge>}
                 <span className="text-muted-foreground text-xs">
                   Registered {shown.registeredAt}
                 </span>
               </div>
+              {shown.bio && (
+                <p className="text-muted-foreground max-w-[72ch] text-sm leading-relaxed break-words whitespace-pre-line">
+                  {shown.bio}
+                </p>
+              )}
             </SheetHeader>
             <div className="flex items-center justify-between gap-2 border-b px-4 py-2">
               <Button

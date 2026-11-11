@@ -29,6 +29,9 @@ export type RegistrationRow = {
   email: string
   rollNumber: string | null
   department: string | null
+  division: string | null
+  year: string | null
+  bio: string | null
   status: string
   registeredAt: string
   answers: RegistrationAnswers

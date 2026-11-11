@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod"
 import { community, communityMember, post, profile } from "@/db/schema"
 import { parseCampusDateTime } from "@/lib/format"
 import { questionsSchema } from "@/lib/registration-form"
-import { parseRollNumber } from "@/lib/roll-number"
+import { parseRollNumber, STUDY_YEARS } from "@/lib/roll-number"
 
 const optionalText = (max: number) =>
   z
@@ -192,7 +192,7 @@ export const memberFormSchema = createInsertSchema(communityMember)
   })
   .strict()
 
-export const profileFormSchema = createInsertSchema(profile)
+const profileFields = createInsertSchema(profile)
   .pick({ rollNumber: true, bio: true })
   .extend({
     rollNumber: optionalText(30).transform((value, ctx) => {
@@ -219,15 +219,42 @@ export const profileFormSchema = createInsertSchema(profile)
         return z.NEVER
       }
     }),
+    year: z
+      .string()
+      .trim()
+      .transform((value, ctx) => {
+        if (value === "") return null
+        const year = STUDY_YEARS.find((option) => String(option) === value)
+        if (!year) {
+          ctx.addIssue({ code: "custom", message: "Choose your year." })
+          return z.NEVER
+        }
+        return year
+      }),
     bio: optionalText(400),
   })
   .strict()
-  .transform((data) => ({
+
+function withDepartment(data: z.infer<typeof profileFields>) {
+  return {
     ...data,
+    year: data.rollNumber ? data.year : null,
     department: data.rollNumber
       ? (parseRollNumber(data.rollNumber)?.department ?? null)
       : null,
-  }))
+  }
+}
+
+export const profileFormSchema = profileFields.transform(withDepartment)
+
+export const onboardingFormSchema = profileFields
+  .superRefine((data, ctx) => {
+    if (!data.rollNumber)
+      ctx.addIssue({ code: "custom", message: "Enter your roll number." })
+    else if (!data.year)
+      ctx.addIssue({ code: "custom", message: "Choose your year." })
+  })
+  .transform(withDepartment)
 
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Check the form and try again"

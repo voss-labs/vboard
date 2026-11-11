@@ -20,7 +20,7 @@ The wedge: replace the per-event Google Form workflow with unified, one-click re
 What's in:
 
 - Signup gated by `@vit.edu.in` + Resend-verified email
-- Profile: rollNumber (trust-on-signup), department
+- Profile: rollNumber (trust-on-signup), department and division derived from it, year, optional bio. Asked once, the first time someone registers for an event; registration needs a complete profile
 - Communities (clubs / societies as hosts)
 - Flat community membership — anyone in = full rights for that community
 - Unified `post` model — text announcement OR event, depending on whether event fields are filled
@@ -90,7 +90,8 @@ vboard-owned tables:
 - userId (FK, unique)
 - rollNumber (text, nullable, indexed) — students fill, faculty/admin leave blank
 - department (text, nullable) — "CSE", "EC", etc.
-- bio (text, nullable)
+- cohortYear (integer, nullable) — the academic year the student's batch was in first year; study year is derived from it and moves up each June
+- bio (text, nullable) — shown to the hosting team with a registration
 - isActive, timestamps
 
 ### community

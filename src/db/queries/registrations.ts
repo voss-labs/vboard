@@ -193,6 +193,8 @@ export async function listRegistrations(ctx: DbContext, postId: string) {
     email: string
     rollNumber: string | null
     department: string | null
+    cohortYear: number | null
+    bio: string | null
     answers: RegistrationAnswers
   }>(
     ctx,

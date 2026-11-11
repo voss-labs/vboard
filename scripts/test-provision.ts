@@ -92,7 +92,7 @@ async function main() {
     assert.equal(
       (await owner.query("SELECT count(*)::int n FROM public._migrations"))
         .rows[0].n,
-      11
+      12
     )
     assert.equal(
       (

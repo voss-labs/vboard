@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
+  cohortYearFor,
   currentYear,
   DEPARTMENTS,
   DEPARTMENT_LABELS,
   expectedYear,
+  rollStudyYear,
+  studyYear,
   parseRollNumber,
 } from "@/lib/roll-number"
 
@@ -129,5 +132,32 @@ describe("currentYear", () => {
     expect(currentYear("27101A0001", academicYear)).toBeNull()
     expect(currentYear("22101A0001", academicYear)).toBeNull()
     expect(currentYear("23101A2000", academicYear)).toBeNull()
+  })
+})
+
+describe("study year", () => {
+  const november = new Date(2026, 10, 11)
+
+  it.each([
+    [1, 2026],
+    [2, 2025],
+    [3, 2024],
+    [4, 2023],
+  ] as const)("stores year %s as the %s cohort", (year, cohort) => {
+    expect(cohortYearFor(year, november)).toBe(cohort)
+    expect(studyYear(cohort, november)).toBe(year)
+  })
+
+  it("moves a stored cohort up on June 1 and ends after fourth year", () => {
+    expect(studyYear(2024, new Date(2027, 4, 31))).toBe(3)
+    expect(studyYear(2024, new Date(2027, 5, 1))).toBe(4)
+    expect(studyYear(2024, new Date(2028, 5, 1))).toBeNull()
+    expect(studyYear(2027, november)).toBeNull()
+  })
+
+  it("suggests a year from the roll number, one ahead for DSY", () => {
+    expect(rollStudyYear("24102A0054", november)).toBe(3)
+    expect(rollStudyYear("25102A2001", november)).toBe(3)
+    expect(rollStudyYear("invalid", november)).toBeNull()
   })
 })
