@@ -43,8 +43,8 @@ export function RegistrationForm({
       <CardHeader>
         <CardTitle>Registration form</CardTitle>
         <CardDescription>
-          Your name, VIT email, roll number and department are shared with the
-          community team automatically. Your answers go to the same team.
+          Your name, VIT email, roll number, department and year are shared with
+          the community team automatically. Your answers go to the same team.
         </CardDescription>
       </CardHeader>
       <CardContent>

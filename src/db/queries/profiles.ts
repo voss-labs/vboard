@@ -30,6 +30,7 @@ export async function updateProfile(
   data: {
     rollNumber: string | null
     department: string | null
+    cohortYear: number | null
     bio: string | null
   }
 ) {

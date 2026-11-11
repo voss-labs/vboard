@@ -16,10 +16,13 @@ const ctx = { actorId: "verified-student", tx: {} }
 function form(rollNumber = "23108A0054") {
   const data = new FormData()
   data.set("rollNumber", rollNumber)
+  data.set("year", "3")
   data.set("bio", " Student builder ")
   return data
 }
 beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date("2026-11-11T06:00:00Z"))
   vi.resetAllMocks()
   mocks.session.mockResolvedValue({ id: "verified-student" })
   mocks.withDb.mockImplementation(async (_actor, work) => work(ctx))
@@ -36,7 +39,6 @@ describe("profile roll-number save", () => {
     const data = form(" 23105a0054 ")
     data.set("department", "CMPN")
     data.set("division", "C")
-    data.set("year", "FE")
     data.set("userId", "another-student")
     expect((await updateProfileAction(null, data)).ok).toBe(true)
     expect(mocks.withDb).toHaveBeenCalledWith(
@@ -46,6 +48,7 @@ describe("profile roll-number save", () => {
     expect(mocks.update).toHaveBeenCalledWith(ctx, {
       rollNumber: "23105A0054",
       department: "BIOMED",
+      cohortYear: 2024,
       bio: "Student builder",
     })
     expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard", "layout")
@@ -67,8 +70,16 @@ describe("profile roll-number save", () => {
     expect(mocks.update).toHaveBeenCalledWith(ctx, {
       rollNumber: null,
       department: null,
+      cohortYear: null,
       bio: "Student builder",
     })
+  })
+
+  it("rejects a year outside first to fourth before a write", async () => {
+    const data = form()
+    data.set("year", "FE")
+    expect((await updateProfileAction(null, data)).ok).toBe(false)
+    expect(mocks.update).not.toHaveBeenCalled()
   })
 
   it("rejects oversized bio before a write", async () => {

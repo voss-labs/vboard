@@ -7,7 +7,8 @@ Things intentionally out of v1. Don't add until the trigger condition is met.
 - `comment` / `reaction` tables — when a post-engagement feature is requested.
 - `category` / `tag` on posts — when the discover feed needs filter UI.
 - `community_follow` + notifications — v2.
-- `year`, `semester`, `division` on profile — when an event needs to target by them ("BE Sem 8 only").
+- `semester` on profile, and targeting events by year, semester or division ("BE Sem 8 only"). Year and division are already collected.
+- A way for faculty and staff, who have no roll number, to register for events.
 
 ## Features
 

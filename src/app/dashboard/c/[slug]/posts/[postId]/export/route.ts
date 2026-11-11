@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { getPostById } from "@/db/queries/posts"
 import { listRegistrations } from "@/db/queries/registrations"
 import { toCsv } from "@/lib/csv"
+import { divisionOf, studyYearLabel } from "@/lib/profile"
 import { slugify } from "@/lib/slug"
 import { getCommunityAccess, getSessionUser } from "@/lib/session"
 
@@ -35,6 +36,8 @@ export async function GET(
       "Email",
       "Roll number",
       "Department",
+      "Division",
+      "Year",
       "Status",
       "Registered at",
       "Checked in at",
@@ -45,6 +48,8 @@ export async function GET(
       r.email,
       r.rollNumber,
       r.department,
+      divisionOf(r.rollNumber),
+      studyYearLabel(r.cohortYear),
       r.status,
       r.registeredAt,
       r.checkedInAt,

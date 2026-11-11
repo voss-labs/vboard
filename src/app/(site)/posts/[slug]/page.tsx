@@ -30,6 +30,7 @@ import type {
   RegistrationAnswers,
   RegistrationQuestion,
 } from "@/lib/registration-form"
+import { isProfileComplete } from "@/lib/profile"
 import { communityCan } from "@/lib/rbac"
 import { getSessionUser, roleIn } from "@/lib/session"
 
@@ -64,8 +65,11 @@ export default async function PostPage({ params }: Props) {
   const showLocation = canSeeLocation(post, { status, canManage })
   const availability = registrationAvailability(post, post.seatsTaken)
   const questions = post.registrationQuestions
+  const profileComplete = !!user && isProfileComplete(user)
   const showForm =
-    !!user && questions.length > 0 && canRegisterNow(status, availability)
+    profileComplete &&
+    questions.length > 0 &&
+    canRegisterNow(status, availability)
   const answers =
     registration && registration.status !== "cancelled"
       ? registration.answers
@@ -164,6 +168,7 @@ export default async function PostPage({ params }: Props) {
               postId={post.id}
               slug={post.slug}
               signedIn={!!user}
+              profileComplete={profileComplete}
               requiresApproval={post.requiresApproval}
               availability={availability}
               status={status}

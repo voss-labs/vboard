@@ -11,6 +11,7 @@ import {
   cancelRegistrationAction,
   registerAction,
 } from "@/app/(site)/posts/[slug]/actions"
+import { onboardingPath } from "@/lib/profile"
 import {
   canRegisterNow,
   type RegistrationAvailability,
@@ -21,6 +22,7 @@ type Props = {
   postId: string
   slug: string
   signedIn: boolean
+  profileComplete: boolean
   requiresApproval: boolean
   availability: RegistrationAvailability
   status: RegistrationStatus | null
@@ -84,19 +86,21 @@ export function RegistrationPanel(props: Props) {
           <p className="text-muted-foreground text-xs leading-relaxed">
             {props.status === "pending"
               ? "The community team will review your request. Check its status in your workspace."
-              : canRegister
-                ? props.questionCount > 0
-                  ? "The community team asks a few questions with this registration."
-                  : props.requiresApproval
-                    ? "The community team reviews requests before confirming a spot."
-                    : "Register with your VIT account to reserve a spot."
-                : props.status === "approved"
-                  ? "Your spot is confirmed. You can find this event in your registrations."
-                  : props.status === "attended"
-                    ? "Your attendance has been recorded."
-                    : props.status === "rejected"
-                      ? "The community team did not approve your request."
-                      : "Check your registrations for any existing request."}
+              : canRegister && props.signedIn && !props.profileComplete
+                ? "Add your roll number and year once. After that, registering for any event takes one tap."
+                : canRegister
+                  ? props.questionCount > 0
+                    ? "The community team asks a few questions with this registration."
+                    : props.requiresApproval
+                      ? "The community team reviews requests before confirming a spot."
+                      : "Register with your VIT account to reserve a spot."
+                  : props.status === "approved"
+                    ? "Your spot is confirmed. You can find this event in your registrations."
+                    : props.status === "attended"
+                      ? "Your attendance has been recorded."
+                      : props.status === "rejected"
+                        ? "The community team did not approve your request."
+                        : "Check your registrations for any existing request."}
           </p>
         </div>
         {(props.closesOn || props.seatsLeft !== null) && (
@@ -128,6 +132,13 @@ export function RegistrationPanel(props: Props) {
               size="lg"
             />
           </ActionForm>
+        ) : canRegister && !props.profileComplete ? (
+          <Link
+            href={onboardingPath(`/posts/${props.slug}`)}
+            className={buttonVariants({ size: "lg", className: "w-full" })}
+          >
+            Finish your profile to register
+          </Link>
         ) : canRegister && props.questionCount > 0 ? (
           <a
             href="#registration-form"
