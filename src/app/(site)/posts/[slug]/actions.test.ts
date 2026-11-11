@@ -22,6 +22,7 @@ const student = {
   rollNumber: "24102A0054",
   department: "CMPN",
   cohortYear: 2024,
+  phone: "9876543210",
 }
 function form() {
   const data = new FormData()
@@ -39,6 +40,7 @@ describe("registering needs a finished profile", () => {
   it.each([
     [{ ...student, rollNumber: null }],
     [{ ...student, cohortYear: null }],
+    [{ ...student, phone: null }],
     [{ ...student, rollNumber: "220189" }],
   ])("refuses %o before touching the database", async (user) => {
     mocks.session.mockResolvedValue(user)

@@ -1,4 +1,5 @@
 import { campusDayKey } from "@/lib/format"
+import { isPhone } from "@/lib/phone"
 import {
   parseRollNumber,
   studyYear,
@@ -9,6 +10,7 @@ export type ProfileDetails = {
   rollNumber: string | null
   department: string | null
   cohortYear: number | null
+  phone: string | null
 }
 
 export function isProfileComplete(profile: ProfileDetails): boolean {
@@ -16,6 +18,8 @@ export function isProfileComplete(profile: ProfileDetails): boolean {
     profile.rollNumber &&
     profile.department &&
     profile.cohortYear !== null &&
+    profile.phone &&
+    isPhone(profile.phone) &&
     parseRollNumber(profile.rollNumber)?.department
   )
 }

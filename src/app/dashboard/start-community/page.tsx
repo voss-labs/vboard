@@ -65,7 +65,7 @@ export default async function StartCommunityPage() {
               <CommunityRequestForm
                 key={requests.length}
                 email={user.email}
-                phone=""
+                phone={user.phone ?? ""}
               />
             </Panel>
           )}

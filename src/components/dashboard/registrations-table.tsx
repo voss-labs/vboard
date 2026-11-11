@@ -39,6 +39,7 @@ export type RegistrationRow = {
   department: string | null
   division: string | null
   year: string | null
+  phone: string | null
   bio: string | null
   status: string
   registeredAt: string

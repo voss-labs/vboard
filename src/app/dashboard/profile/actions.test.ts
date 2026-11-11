@@ -49,6 +49,7 @@ describe("profile roll-number save", () => {
       rollNumber: "23105A0054",
       department: "BIOMED",
       cohortYear: 2024,
+      phone: null,
       bio: "Student builder",
     })
     expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard", "layout")
@@ -71,6 +72,7 @@ describe("profile roll-number save", () => {
       rollNumber: null,
       department: null,
       cohortYear: null,
+      phone: null,
       bio: "Student builder",
     })
   })

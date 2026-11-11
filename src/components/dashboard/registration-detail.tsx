@@ -16,6 +16,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { initials } from "@/lib/identity"
+import { formatPhone } from "@/lib/phone"
 import { canReceiveDecision } from "@/lib/registration"
 import { countWords, type RegistrationQuestion } from "@/lib/registration-form"
 
@@ -99,6 +100,19 @@ export function RegistrationDetail({
                   <Fact label="Department" value={shown.department} />
                   <Fact label="Division" value={shown.division} />
                   <Fact label="Year" value={shown.year} />
+                  {shown.phone && (
+                    <div className="min-w-0 space-y-0.5">
+                      <dt className="text-muted-foreground text-xs">Contact</dt>
+                      <dd className="text-sm font-medium tabular-nums">
+                        <a
+                          href={`tel:+91${shown.phone}`}
+                          className="underline-offset-4 hover:underline"
+                        >
+                          {formatPhone(shown.phone)}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
                   <Fact label="Registered" value={shown.registeredAt} />
                 </dl>
                 {shown.bio && (

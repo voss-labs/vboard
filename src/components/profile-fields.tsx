@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { isPhone, normalizePhone } from "@/lib/phone"
 import { academicDay } from "@/lib/profile"
 import {
   DEPARTMENT_LABELS,
@@ -42,6 +43,7 @@ function readRollNumber(value: string) {
 export function ProfileFields({
   initialRollNumber,
   initialYear,
+  initialPhone,
   initialBio,
   academicDate,
   required,
@@ -49,6 +51,7 @@ export function ProfileFields({
 }: {
   initialRollNumber: string | null
   initialYear: StudyYear | null
+  initialPhone: string | null
   initialBio: string | null
   academicDate: string
   required: boolean
@@ -57,6 +60,8 @@ export function ProfileFields({
   const [rollNumber, setRollNumber] = useState(initialRollNumber ?? "")
   const [touched, setTouched] = useState(Boolean(initialRollNumber))
   const [bio, setBio] = useState(initialBio ?? "")
+  const [phone, setPhone] = useState(initialPhone ?? "")
+  const [phoneTouched, setPhoneTouched] = useState(Boolean(initialPhone))
   const [picked, setPicked] = useState<string | null>(
     initialYear ? String(initialYear) : null
   )
@@ -68,7 +73,13 @@ export function ProfileFields({
   const showError = Boolean(
     error && (touched || rollNumber.trim().length >= 10)
   )
-  const valid = !error && (!required || (Boolean(parsed) && year !== UNSET))
+  const phoneGiven = normalizePhone(phone) !== ""
+  const phoneValid = isPhone(normalizePhone(phone))
+  const showPhoneError = phoneGiven && !phoneValid && phoneTouched
+  const valid =
+    !error &&
+    (phoneValid || (!required && !phoneGiven)) &&
+    (!required || (Boolean(parsed) && year !== UNSET))
 
   return (
     <FieldGroup>
@@ -151,6 +162,34 @@ export function ProfileFields({
           </FieldDescription>
         </Field>
       </div>
+      <Field>
+        <FieldLabel htmlFor="phone">Contact number</FieldLabel>
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          onBlur={() => setPhoneTouched(true)}
+          placeholder="98765 43210"
+          maxLength={20}
+          required={required}
+          className="tabular-nums @md/field-group:max-w-[calc(50%-0.625rem)]"
+          aria-invalid={showPhoneError}
+          aria-describedby="phone-help"
+        />
+        {showPhoneError ? (
+          <p id="phone-help" role="alert" className="text-destructive text-sm">
+            Enter a 10-digit mobile number.
+          </p>
+        ) : (
+          <FieldDescription id="phone-help">
+            So the team running an event you register for can reach you.
+          </FieldDescription>
+        )}
+      </Field>
       <Field>
         <div className="flex items-baseline justify-between gap-3">
           <FieldLabel htmlFor="bio">

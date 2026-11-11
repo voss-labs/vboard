@@ -181,6 +181,7 @@ describe("strict writable field boundaries", () => {
       profileFormSchema.safeParse({
         rollNumber: "",
         year: "",
+        phone: "",
         bio: "",
         siteRole: "super_admin",
       }).success
@@ -218,6 +219,7 @@ describe("profileFormSchema", () => {
       profileFormSchema.safeParse({
         rollNumber: "23108A0054",
         year: "",
+        phone: "",
         department: "CIVIL",
         bio: "",
       }).success
@@ -232,28 +234,54 @@ describe("profileFormSchema", () => {
     ["23108B0001", "EXCS"],
     ["23103A0001", "EXCS"],
   ])("derives %s as %s", (rollNumber, department) => {
-    expect(profileFormSchema.parse({ rollNumber, year: "", bio: "" })).toEqual({
+    expect(
+      profileFormSchema.parse({ rollNumber, year: "", phone: "", bio: "" })
+    ).toEqual({
       rollNumber,
       department,
       year: null,
+      phone: null,
       bio: null,
     })
   })
 
   it("keeps a chosen year and drops it when there is no roll number", () => {
     expect(
-      profileFormSchema.parse({ rollNumber: "23102A0054", year: "3", bio: "" })
-        .year
+      profileFormSchema.parse({
+        rollNumber: "23102A0054",
+        year: "3",
+        phone: "",
+        bio: "",
+      }).year
     ).toBe(3)
     expect(
-      profileFormSchema.parse({ rollNumber: "", year: "3", bio: "" }).year
+      profileFormSchema.parse({
+        rollNumber: "",
+        year: "3",
+        phone: "",
+        bio: "",
+      }).year
     ).toBeNull()
   })
 
   it.each(["0", "5", "FE", "third"])("rejects the year %s", (year) => {
     expect(
-      profileFormSchema.safeParse({ rollNumber: "23102A0054", year, bio: "" })
-        .success
+      profileFormSchema.safeParse({
+        rollNumber: "23102A0054",
+        year,
+        phone: "",
+        bio: "",
+      }).success
+    ).toBe(false)
+  })
+
+  it("normalizes a contact number and rejects one that is not a mobile number", () => {
+    const input = { rollNumber: "23102A0054", year: "3", bio: "" }
+    expect(
+      profileFormSchema.parse({ ...input, phone: "+91 98765 43210" }).phone
+    ).toBe("9876543210")
+    expect(
+      profileFormSchema.safeParse({ ...input, phone: "12345" }).success
     ).toBe(false)
   })
 })
@@ -264,20 +292,32 @@ describe("onboardingFormSchema", () => {
       onboardingFormSchema.parse({
         rollNumber: " 23102a0054 ",
         year: "2",
+        phone: "98765 43210",
         bio: " Builder ",
       })
     ).toEqual({
       rollNumber: "23102A0054",
       department: "CMPN",
       year: 2,
+      phone: "9876543210",
       bio: "Builder",
     })
   })
 
   it.each([
-    [{ rollNumber: "", year: "2", bio: "" }, "Enter your roll number."],
-    [{ rollNumber: "23102A0054", year: "", bio: "" }, "Choose your year."],
-  ])("requires the roll number and the year", (input, message) => {
+    [
+      { rollNumber: "", year: "2", phone: "9876543210", bio: "" },
+      "Enter your roll number.",
+    ],
+    [
+      { rollNumber: "23102A0054", year: "", phone: "9876543210", bio: "" },
+      "Choose your year.",
+    ],
+    [
+      { rollNumber: "23102A0054", year: "2", phone: "", bio: "" },
+      "Enter your contact number.",
+    ],
+  ])("requires the roll number, year and contact number", (input, message) => {
     const result = onboardingFormSchema.safeParse(input)
     expect(result.success).toBe(false)
     expect(result.error?.issues[0].message).toBe(message)
@@ -288,6 +328,7 @@ describe("onboardingFormSchema", () => {
       onboardingFormSchema.safeParse({
         rollNumber: "23102A0054",
         year: "2",
+        phone: "9876543210",
         bio: "",
         department: "IT",
       }).success

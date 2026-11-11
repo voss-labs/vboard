@@ -44,6 +44,7 @@ export default async function OnboardingPage({
                 ? null
                 : studyYear(user.cohortYear, academicDay(today))
             }
+            initialPhone={user.phone}
             initialBio={user.bio}
             academicDate={today}
           />
@@ -52,7 +53,7 @@ export default async function OnboardingPage({
       <p className="text-muted-foreground text-xs leading-relaxed break-words">
         Signed in as {user.name} ({user.email}). The team running an event you
         register for sees your name, VIT email, roll number, department,
-        division, year and bio.
+        division, year, contact number and bio.
       </p>
     </div>
   )

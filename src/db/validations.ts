@@ -2,7 +2,7 @@ import { z } from "zod"
 import { createInsertSchema } from "drizzle-zod"
 import { community, communityMember, post, profile } from "@/db/schema"
 import { parseCampusDateTime } from "@/lib/format"
-import { phoneSchema } from "@/lib/phone"
+import { isPhone, normalizePhone, phoneSchema } from "@/lib/phone"
 import { questionsSchema } from "@/lib/registration-form"
 import { parseRollNumber, STUDY_YEARS } from "@/lib/roll-number"
 
@@ -248,6 +248,18 @@ const profileFields = createInsertSchema(profile)
         }
         return year
       }),
+    phone: z.string().transform((value, ctx) => {
+      const phone = normalizePhone(value)
+      if (phone === "") return null
+      if (!isPhone(phone)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a 10-digit mobile number.",
+        })
+        return z.NEVER
+      }
+      return phone
+    }),
     bio: optionalText(400),
   })
   .strict()
@@ -270,6 +282,8 @@ export const onboardingFormSchema = profileFields
       ctx.addIssue({ code: "custom", message: "Enter your roll number." })
     else if (!data.year)
       ctx.addIssue({ code: "custom", message: "Choose your year." })
+    else if (!data.phone)
+      ctx.addIssue({ code: "custom", message: "Enter your contact number." })
   })
   .transform(withDepartment)
 

@@ -19,6 +19,7 @@ function form(values: Record<string, string> = {}) {
   const data = new FormData()
   data.set("rollNumber", "24102a0054")
   data.set("year", "3")
+  data.set("phone", "+91 98765 43210")
   data.set("bio", " Builder ")
   data.set("next", "/posts/hack-night")
   for (const [key, value] of Object.entries(values)) data.set(key, value)
@@ -52,6 +53,7 @@ describe("completing onboarding", () => {
       rollNumber: "24102A0054",
       department: "CMPN",
       cohortYear: 2024,
+      phone: "9876543210",
       bio: "Builder",
     })
     expect(mocks.redirect).toHaveBeenCalledWith("/posts/hack-night")
@@ -62,6 +64,8 @@ describe("completing onboarding", () => {
     [{ rollNumber: "220189" }],
     [{ year: "" }],
     [{ year: "5" }],
+    [{ phone: "" }],
+    [{ phone: "12345" }],
   ])("rejects %o before a write", async (values) => {
     expect((await completeOnboardingAction(null, form(values))).ok).toBe(false)
     expect(mocks.update).not.toHaveBeenCalled()

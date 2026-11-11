@@ -9,11 +9,13 @@ import { updateProfileAction } from "@/app/dashboard/profile/actions"
 export function ProfileForm({
   initialRollNumber,
   initialYear,
+  initialPhone,
   initialBio,
   academicDate,
 }: {
   initialRollNumber: string | null
   initialYear: StudyYear | null
+  initialPhone: string | null
   initialBio: string | null
   academicDate: string
 }) {
@@ -22,6 +24,7 @@ export function ProfileForm({
       <ProfileFields
         initialRollNumber={initialRollNumber}
         initialYear={initialYear}
+        initialPhone={initialPhone}
         initialBio={initialBio}
         academicDate={academicDate}
         required={false}

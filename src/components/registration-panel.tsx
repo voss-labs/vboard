@@ -87,7 +87,7 @@ export function RegistrationPanel(props: Props) {
             {props.status === "pending"
               ? "The community team will review your request. Check its status in your workspace."
               : canRegister && props.signedIn && !props.profileComplete
-                ? "Add your roll number and year once. After that, registering for any event takes one tap."
+                ? "Add your roll number, year and contact number once. After that, registering for any event takes one tap."
                 : canRegister
                   ? props.questionCount > 0
                     ? "The community team asks a few questions with this registration."

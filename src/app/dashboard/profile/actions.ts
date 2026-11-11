@@ -17,6 +17,7 @@ export async function updateProfileAction(
   const parsed = profileFormSchema.safeParse({
     rollNumber: formData.get("rollNumber") ?? "",
     year: formData.get("year") ?? "",
+    phone: formData.get("phone") ?? "",
     bio: formData.get("bio") ?? "",
   })
   if (!parsed.success) return fail(firstIssue(parsed.error))

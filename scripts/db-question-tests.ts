@@ -223,6 +223,7 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
   const details = {
     rollNumber: "23102A0054",
     department: "CMPN",
+    phone: "9876543210",
     bio: "Builds backend services",
   }
   await asActor("student", (ctx) =>
@@ -232,7 +233,13 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
     listRegistrations(ctx, event)
   )
   assert.equal(reviewed.cohortYear, 2023)
+  assert.equal(reviewed.phone, details.phone)
   assert.equal(reviewed.bio, details.bio)
+  await assert.rejects(
+    asActor("student", (ctx) =>
+      updateProfile(ctx, { ...details, cohortYear: 2023, phone: "12345" })
+    )
+  )
   await assert.rejects(
     asActor("student", (ctx) =>
       updateProfile(ctx, { ...details, cohortYear: 1999 })

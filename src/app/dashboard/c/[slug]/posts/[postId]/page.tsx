@@ -169,6 +169,7 @@ export default async function ManagePostPage({
                   department: r.department,
                   division: divisionOf(r.rollNumber),
                   year: studyYearLabel(r.cohortYear),
+                  phone: r.phone,
                   bio: r.bio,
                   status: r.status,
                   registeredAt: formatStamp(r.registeredAt),

@@ -11,6 +11,7 @@
 - Communities admin page: requests to review sit above a full-width table, and the create form opens from a New community button.
 - Public Communities page: compact cards with the logo beside the name, a two-line description and one line of counts, plus a Start a community entry in the header and at the end of the grid.
 - Community Team and Settings pages: adding a member is one row above the table, Remove is quiet until confirmed, the logo field shows the logo beside its upload, and Settings fills the page with a card showing how the community appears publicly.
+- Contact number: the profile holds a 10-digit mobile number, asked in onboarding and required to register. The team running an event sees it in the review sheet and the CSV export, and the Start a community form fills it in. New `profile.phone` column (migration 0013).
 - Onboarding: the first time someone registers for an event they add their roll number (department and division are read from it), pick their year from a dropdown and can add a bio. Registration needs a complete profile; the hosting team sees division, year and bio in the review sheet, and division and year in the CSV export.
 - Event registration questions: Organizers add required or optional single-choice and long-text questions to an event; students answer when registering, and the hosting team reads the answers in the registrations view and the CSV export.
 - Sign in with VOSS (OIDC, PKCE) like VERP; passwords removed. Local persona switcher behind `VBOARD_DEV_AUTH`.
