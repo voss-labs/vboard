@@ -1,15 +1,18 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { SearchIcon } from "lucide-react"
+import { ChevronRightIcon } from "lucide-react"
 import { RecordTable } from "@/components/dashboard/record-table"
 import { RegistrationBulkActions } from "@/components/dashboard/registration-bulk-actions"
 import { RegistrationDetail } from "@/components/dashboard/registration-detail"
+import {
+  ANY,
+  RegistrationsToolbar,
+  STATUS_FILTERS,
+} from "@/components/dashboard/registrations-toolbar"
 import { EmptyState, StatusBadge } from "@/components/dashboard/ui"
-import { FormSelect } from "@/components/form-select"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import {
   TableBody,
   TableCell,
@@ -17,7 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import type {
   RegistrationAnswers,
   RegistrationQuestion,
@@ -37,16 +44,7 @@ export type RegistrationRow = {
   answers: RegistrationAnswers
 }
 
-const FILTERS = [
-  "all",
-  "pending",
-  "approved",
-  "attended",
-  "rejected",
-  "cancelled",
-  "no_show",
-]
-const ANY = "all"
+const DEFAULT_ANSWER_COLUMNS = 2
 
 export function RegistrationsTable({
   rows,
@@ -65,15 +63,19 @@ export function RegistrationsTable({
   canCheckIn: boolean
   initialFilter: string
 }) {
-  const [filter, setFilter] = useState(
-    FILTERS.includes(initialFilter) ? initialFilter : "all"
+  const choiceQuestions = questions.filter((q) => q.type === "choice")
+  const [status, setStatus] = useState(
+    STATUS_FILTERS.includes(initialFilter) ? initialFilter : "all"
   )
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [choices, setChoices] = useState<Record<string, string>>({})
-  const [resetKey, setResetKey] = useState(0)
+  const [columns, setColumns] = useState(
+    () =>
+      new Set(choiceQuestions.slice(0, DEFAULT_ANSWER_COLUMNS).map((q) => q.id))
+  )
   const [open, setOpen] = useState<{ id: string; index: number } | null>(null)
-  const choiceQuestions = questions.filter((q) => q.type === "choice")
+  const shownQuestions = choiceQuestions.filter((q) => columns.has(q.id))
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rows.length }
@@ -82,7 +84,7 @@ export function RegistrationsTable({
   }, [rows])
 
   const visible = rows.filter((r) => {
-    if (filter !== "all" && r.status !== filter) return false
+    if (status !== "all" && r.status !== status) return false
     if (
       choiceQuestions.some(
         (c) =>
@@ -117,97 +119,68 @@ export function RegistrationsTable({
       else next.delete(id)
       return next
     })
+  const clearFilters = () => {
+    setStatus("all")
+    setQuery("")
+    setChoices({})
+    setSelected(new Set())
+  }
 
   const selectable = canDecide || canCheckIn
+  const summary =
+    visible.length === rows.length
+      ? `${rows.length} ${rows.length === 1 ? "registration" : "registrations"}`
+      : `${visible.length} of ${rows.length} registrations`
+  const allSelected =
+    visible.length > 0 && visible.every((r) => selected.has(r.id))
+  const selectAll = (on: boolean) =>
+    setSelected(on ? new Set(visible.map((r) => r.id)) : new Set())
 
   return (
     <div className="flex flex-col">
-      <div className="flex min-w-0 flex-col gap-3 border-b px-4 py-4 md:px-6">
-        <Tabs
-          value={filter}
-          onValueChange={(v) => {
-            setFilter(String(v))
-            setSelected(new Set())
-          }}
-        >
-          <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto group-data-horizontal/tabs:h-auto md:flex-wrap md:overflow-visible">
-            {FILTERS.map((f) => (
-              <TabsTrigger
-                key={f}
-                value={f}
-                className="h-auto min-h-11 flex-none px-2.5 text-xs capitalize md:min-h-8"
-              >
-                {f === "no_show" ? "No-show" : f}
-                <span className="text-muted-foreground tabular-nums">
-                  {counts[f] ?? 0}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="relative w-full sm:max-w-sm">
-            <SearchIcon className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-            <Input
-              type="search"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                setSelected(new Set())
-              }}
-              placeholder={
-                questions.length
-                  ? "Name, email, roll no. or answer"
-                  : "Name, email, roll no."
-              }
-              aria-label="Search registrations"
-              className="pl-8"
+      <RegistrationsToolbar
+        status={status}
+        counts={counts}
+        summary={summary}
+        query={query}
+        searchesAnswers={questions.length > 0}
+        choiceQuestions={choiceQuestions}
+        choices={choices}
+        columns={columns}
+        onStatus={(next) => {
+          setStatus(next)
+          setSelected(new Set())
+        }}
+        onQuery={(next) => {
+          setQuery(next)
+          setSelected(new Set())
+        }}
+        onChoice={(id, choice) => {
+          setChoices((prev) => ({ ...prev, [id]: choice }))
+          setSelected(new Set())
+        }}
+        onColumn={(id, shown) =>
+          setColumns((prev) => {
+            const next = new Set(prev)
+            if (shown) next.add(id)
+            else next.delete(id)
+            return next
+          })
+        }
+      />
+      <div className="flex min-h-11 items-center gap-3 border-b px-4 md:hidden">
+        {selectable && visible.length > 0 && (
+          <label className="flex min-h-11 items-center gap-2 text-xs">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={selectAll}
+              aria-label="Select all shown registrations"
             />
-          </div>
-          {choiceQuestions.map((c) => (
-            <FormSelect
-              key={`${c.id}-${resetKey}`}
-              name={`choice-${c.id}`}
-              label={`Filter by ${c.label}`}
-              defaultValue={choices[c.id] ?? ANY}
-              className="w-full min-w-0 sm:w-auto sm:max-w-xs"
-              onValueChange={(value) => {
-                setChoices((prev) => ({ ...prev, [c.id]: value }))
-                setSelected(new Set())
-              }}
-              items={[
-                { value: ANY, label: `All: ${c.label}` },
-                ...c.options.map((option) => ({
-                  value: option,
-                  label: option,
-                })),
-              ]}
-            />
-          ))}
-        </div>
+            Select all
+          </label>
+        )}
+        <p className="text-muted-foreground ml-auto text-xs">{summary}</p>
       </div>
-
-      {selectable && (
-        <RegistrationBulkActions
-          slug={slug}
-          postId={postId}
-          selected={selected}
-          visibleIds={visible.map((r) => r.id)}
-          canDecide={canDecide}
-          canCheckIn={canCheckIn}
-          onSelectedChange={setSelected}
-        />
-      )}
-
-      <p
-        className="text-muted-foreground border-b px-4 py-2 text-xs md:px-6"
-        aria-live="polite"
-      >
-        {visible.length} of {rows.length} registrations
-        {selected.size > 0
-          ? " · Decisions apply to every selected attendee."
-          : ""}
-      </p>
       {visible.length === 0 ? (
         <EmptyState
           className="m-4"
@@ -223,16 +196,7 @@ export function RegistrationsTable({
           }
           action={
             rows.length > 0 ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFilter("all")
-                  setQuery("")
-                  setChoices({})
-                  setResetKey((key) => key + 1)
-                  setSelected(new Set())
-                }}
-              >
+              <Button variant="outline" onClick={clearFilters}>
                 Clear filters
               </Button>
             ) : undefined
@@ -244,15 +208,30 @@ export function RegistrationsTable({
             <TableRow>
               {selectable && (
                 <TableHead className="w-10 pl-6">
-                  <span className="sr-only">Selection</span>
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={selectAll}
+                    aria-label="Select all shown registrations"
+                  />
                 </TableHead>
               )}
               <TableHead className={selectable ? "" : "pl-6"}>Name</TableHead>
               <TableHead>Roll no.</TableHead>
-              <TableHead>Dept</TableHead>
-              {choiceQuestions.map((c) => (
-                <TableHead key={c.id} title={c.label}>
-                  <span className="block max-w-48 truncate">{c.label}</span>
+              {shownQuestions.map((c) => (
+                <TableHead key={c.id}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <span
+                          tabIndex={0}
+                          className="block max-w-44 truncate outline-none"
+                        />
+                      }
+                    >
+                      {c.label}
+                    </TooltipTrigger>
+                    <TooltipContent>{c.label}</TooltipContent>
+                  </Tooltip>
                 </TableHead>
               ))}
               <TableHead>Registered</TableHead>
@@ -260,7 +239,7 @@ export function RegistrationsTable({
                 Status
               </TableHead>
               {questions.length > 0 && (
-                <TableHead className="pr-6">
+                <TableHead className="w-10 pr-6">
                   <span className="sr-only">Answers</span>
                 </TableHead>
               )}
@@ -296,28 +275,34 @@ export function RegistrationsTable({
                 </TableCell>
                 <TableCell
                   data-label="Roll no."
-                  className="tabular-nums max-md:col-span-full"
-                >
-                  {r.rollNumber ?? "—"}
-                </TableCell>
-                <TableCell
-                  data-label="Department"
                   className="max-md:col-span-full"
                 >
-                  {r.department ?? "—"}
+                  <div>
+                    <div className="tabular-nums">{r.rollNumber ?? "—"}</div>
+                    <div className="text-muted-foreground text-xs md:whitespace-nowrap">
+                      {[r.department, r.division && `Div ${r.division}`, r.year]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </div>
+                  </div>
                 </TableCell>
-                {choiceQuestions.map((c) => (
+                {shownQuestions.map((c) => (
                   <TableCell
                     key={c.id}
                     data-label={c.label}
                     className="max-md:col-span-full"
                   >
-                    {r.answers[c.id] ?? "—"}
+                    <span
+                      title={r.answers[c.id]}
+                      className="min-w-0 wrap-anywhere md:block md:max-w-44 md:truncate"
+                    >
+                      {r.answers[c.id] ?? "—"}
+                    </span>
                   </TableCell>
                 ))}
                 <TableCell
                   data-label="Registered"
-                  className="text-muted-foreground max-md:col-span-full"
+                  className="text-muted-foreground max-md:col-span-full md:whitespace-nowrap!"
                 >
                   {r.registeredAt}
                 </TableCell>
@@ -336,12 +321,20 @@ export function RegistrationsTable({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full md:w-auto"
+                      className="w-full md:hidden"
                       onClick={() => show(r)}
                       aria-label={`View answers from ${r.name}`}
                     >
-                      <span className="md:hidden">View answers</span>
-                      <span className="max-md:hidden">View</span>
+                      View answers
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="max-md:hidden"
+                      onClick={() => show(r)}
+                      aria-label={`View answers from ${r.name}`}
+                    >
+                      <ChevronRightIcon />
                     </Button>
                   </TableCell>
                 )}
@@ -349,6 +342,16 @@ export function RegistrationsTable({
             ))}
           </TableBody>
         </RecordTable>
+      )}
+      {selectable && selected.size > 0 && (
+        <RegistrationBulkActions
+          slug={slug}
+          postId={postId}
+          selected={selected}
+          canDecide={canDecide}
+          canCheckIn={canCheckIn}
+          onSelectedChange={setSelected}
+        />
       )}
       {questions.length > 0 && (
         <RegistrationDetail
