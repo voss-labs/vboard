@@ -26,6 +26,8 @@ export async function listOwnCommunityRequests(ctx: DbContext) {
       id: communityRequest.id,
       name: communityRequest.name,
       slug: communityRequest.slug,
+      contactPhone: communityRequest.contactPhone,
+      contactEmail: communityRequest.contactEmail,
       status: communityRequest.status,
       decisionNote: communityRequest.decisionNote,
       createdAt: communityRequest.createdAt,
@@ -43,6 +45,8 @@ export async function listPendingCommunityRequests(ctx: DbContext) {
     slug: string
     description: string
     purpose: string
+    contactPhone: string
+    contactEmail: string
     status: CommunityRequestStatus
     createdAt: Date
     requesterName: string
@@ -66,7 +70,14 @@ export async function hasPendingCommunityRequest(ctx: DbContext) {
 
 export async function submitCommunityRequest(
   ctx: DbContext,
-  data: { name: string; slug: string; description: string; purpose: string }
+  data: {
+    name: string
+    slug: string
+    description: string
+    purpose: string
+    contactPhone: string
+    contactEmail: string
+  }
 ) {
   const row = requireRow(
     await ctx.tx

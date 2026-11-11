@@ -104,7 +104,7 @@ vboard-owned tables:
 
 ### community_request
 
-- requesterId (FK), name, slug, description, purpose (read only by the reviewer)
+- requesterId (FK), name, slug, description, purpose, contactPhone, contactEmail (the last three read only by the reviewer)
 - status (enum: `pending` | `approved` | `rejected` | `withdrawn`), one pending request per requester
 - communityId (FK, set on approval), decidedBy, decidedAt, decisionNote
 - timestamps

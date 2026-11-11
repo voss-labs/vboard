@@ -6,6 +6,8 @@ CREATE TABLE "community_request" (
   "slug" text NOT NULL,
   "description" text DEFAULT '' NOT NULL,
   "purpose" text NOT NULL,
+  "contact_phone" text NOT NULL,
+  "contact_email" text NOT NULL,
   "status" "community_request_status" DEFAULT 'pending' NOT NULL,
   "community_id" uuid,
   "decided_by" text,
@@ -28,6 +30,8 @@ CREATE POLICY "community_request_update" ON "community_request" AS PERMISSIVE FO
 ALTER TABLE public.community_request ADD CONSTRAINT community_request_text_bounds CHECK (
   char_length(btrim(name)) BETWEEN 2 AND 80 AND slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND char_length(slug) <= 60 AND
   char_length(description) <= 600 AND char_length(btrim(purpose)) BETWEEN 20 AND 600 AND
+  contact_phone ~ '^[6-9][0-9]{9}$' AND char_length(contact_email) <= 254 AND contact_email=lower(contact_email) AND
+  contact_email ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$' AND
   (decision_note IS NULL OR char_length(decision_note) <= 400));
 ALTER TABLE public.community_request FORCE ROW LEVEL SECURITY;
 GRANT SELECT ON public.community_request TO vboard_guard;
@@ -48,8 +52,8 @@ BEGIN
     NEW.created_at=clock_timestamp();
     RETURN NEW;
   END IF;
-  IF (NEW.id,NEW.requester_id,NEW.name,NEW.slug,NEW.description,NEW.purpose,NEW.created_at) IS DISTINCT FROM
-    (OLD.id,OLD.requester_id,OLD.name,OLD.slug,OLD.description,OLD.purpose,OLD.created_at) THEN
+  IF (NEW.id,NEW.requester_id,NEW.name,NEW.slug,NEW.description,NEW.purpose,NEW.contact_phone,NEW.contact_email,NEW.created_at) IS DISTINCT FROM
+    (OLD.id,OLD.requester_id,OLD.name,OLD.slug,OLD.description,OLD.purpose,OLD.contact_phone,OLD.contact_email,OLD.created_at) THEN
     RAISE EXCEPTION 'Community request details are immutable' USING ERRCODE='42501'; END IF;
   IF OLD.status<>'pending' THEN RAISE EXCEPTION 'This community request is already closed'; END IF;
   IF NEW.status='withdrawn' THEN
@@ -75,6 +79,7 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $
 BEGIN
   IF NOT vboard_api.is_super_admin() THEN RAISE EXCEPTION 'Community request access denied' USING ERRCODE='42501'; END IF;
   RETURN QUERY SELECT jsonb_build_object('id',q.id,'name',q.name,'slug',q.slug,'description',q.description,'purpose',q.purpose,
+    'contactPhone',q.contact_phone,'contactEmail',q.contact_email,
     'status',q.status,'createdAt',q.created_at,'requesterName',u.name,'requesterEmail',u.email,
     'slugTaken',EXISTS (SELECT 1 FROM public.community c WHERE c.slug=q.slug))
   FROM public.community_request q JOIN public."user" u ON u.id=q.requester_id

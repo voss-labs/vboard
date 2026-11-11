@@ -23,6 +23,8 @@ export const communityRequest = pgTable(
     slug: text("slug").notNull(),
     description: text("description").notNull().default(""),
     purpose: text("purpose").notNull(),
+    contactPhone: text("contact_phone").notNull(),
+    contactEmail: text("contact_email").notNull(),
     status: communityRequestStatusEnum("status").notNull().default("pending"),
     communityId: uuid("community_id").references(() => community.id, {
       onDelete: "restrict",

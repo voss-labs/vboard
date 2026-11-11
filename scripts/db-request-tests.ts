@@ -30,6 +30,8 @@ export async function testCommunityRequests(owner: Pool, app: Pool) {
     slug,
     description: "Robots and drones",
     purpose: "Weekly build nights and one competition each term.",
+    contactPhone: "9876543210",
+    contactEmail: "robotics@vit.edu.in",
   })
   const stored = async (id: string) =>
     (
@@ -62,15 +64,26 @@ export async function testCommunityRequests(owner: Pool, app: Pool) {
   await assert.rejects(
     raw(
       "student",
-      sql`insert into public.community_request(requester_id,name,slug,purpose) values('student2','Robotics Club','robotics','Weekly build nights and one competition each term.')`
+      sql`insert into public.community_request(requester_id,name,slug,purpose,contact_phone,contact_email) values('student2','Robotics Club','robotics','Weekly build nights and one competition each term.','9876543210','robotics@vit.edu.in')`
     )
   )
   await assert.rejects(
     raw(
       "student",
-      sql`insert into public.community_request(requester_id,name,slug,purpose,status) values('student','Robotics Club','robotics','Weekly build nights and one competition each term.','approved')`
+      sql`insert into public.community_request(requester_id,name,slug,purpose,contact_phone,contact_email,status) values('student','Robotics Club','robotics','Weekly build nights and one competition each term.','9876543210','robotics@vit.edu.in','approved')`
     )
   )
+  for (const contact of [
+    { contactPhone: "12345" },
+    { contactPhone: "+919876543210" },
+    { contactEmail: "not-an-email" },
+    { contactEmail: "Robotics@vit.edu.in" },
+  ])
+    await assert.rejects(
+      asActor("student", (ctx) =>
+        submitCommunityRequest(ctx, { ...request("robotics"), ...contact })
+      )
+    )
   assert.equal(
     (await owner.query("SELECT count(*)::int n FROM public.community_request"))
       .rows[0].n,
@@ -135,6 +148,12 @@ export async function testCommunityRequests(owner: Pool, app: Pool) {
   )
   await assert.rejects(
     raw(
+      "student",
+      sql`update public.community_request set contact_phone='9123456789' where id=${first.id}::uuid`
+    )
+  )
+  await assert.rejects(
+    raw(
       "super",
       sql`update public.community_request set status='approved',decided_by='super' where id=${first.id}::uuid`
     )
@@ -146,6 +165,8 @@ export async function testCommunityRequests(owner: Pool, app: Pool) {
   )
   assert.equal(pending.length, 1)
   assert.equal(pending[0].requesterEmail, "student@vit.edu.in")
+  assert.equal(pending[0].contactPhone, "9876543210")
+  assert.equal(pending[0].contactEmail, "robotics@vit.edu.in")
   assert.equal(pending[0].slugTaken, false)
 
   const created = await asActor("super", (ctx) =>

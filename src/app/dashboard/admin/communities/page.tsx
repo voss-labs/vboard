@@ -22,6 +22,7 @@ import {
 import { listAllCommunities } from "@/db/queries/communities"
 import { listPendingCommunityRequests } from "@/db/queries/community-requests"
 import { formatShortDate, formatStamp } from "@/lib/format"
+import { formatPhone } from "@/lib/phone"
 import { requireSiteCapability } from "@/lib/session"
 import { setCommunityActiveAction } from "@/app/dashboard/admin/actions"
 import { NewCommunity } from "@/app/dashboard/admin/communities/new-community"
@@ -91,6 +92,23 @@ export default async function AdminCommunitiesPage() {
                         </dd>
                       </div>
                     )}
+                    <div className="space-y-1">
+                      <dt className="text-muted-foreground text-xs">Contact</dt>
+                      <dd className="flex flex-wrap gap-x-4 gap-y-1">
+                        <a
+                          href={`tel:+91${request.contactPhone}`}
+                          className="tabular-nums underline-offset-4 hover:underline"
+                        >
+                          {formatPhone(request.contactPhone)}
+                        </a>
+                        <a
+                          href={`mailto:${request.contactEmail}`}
+                          className="break-all underline-offset-4 hover:underline"
+                        >
+                          {request.contactEmail}
+                        </a>
+                      </dd>
+                    </div>
                   </dl>
                 </div>
                 <RequestReview

@@ -2,6 +2,7 @@ import { z } from "zod"
 import { createInsertSchema } from "drizzle-zod"
 import { community, communityMember, post, profile } from "@/db/schema"
 import { parseCampusDateTime } from "@/lib/format"
+import { phoneSchema } from "@/lib/phone"
 import { questionsSchema } from "@/lib/registration-form"
 import { parseRollNumber, STUDY_YEARS } from "@/lib/roll-number"
 
@@ -190,6 +191,11 @@ export const communityRequestSchema = newCommunitySchema
       .trim()
       .min(20, "Say a little more about what the community will do")
       .max(600),
+    contactPhone: phoneSchema,
+    contactEmail: z
+      .email("Enter a valid contact email")
+      .max(254)
+      .transform((v) => v.trim().toLowerCase()),
   })
   .strict()
 

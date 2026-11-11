@@ -29,6 +29,8 @@ export async function submitCommunityRequestAction(
     slug: formData.get("slug") ?? "",
     description: formData.get("description") ?? "",
     purpose: formData.get("purpose") ?? "",
+    contactPhone: formData.get("contactPhone") ?? "",
+    contactEmail: formData.get("contactEmail") ?? "",
   })
   if (!parsed.success) return fail(firstIssue(parsed.error))
   const result = await attemptAction(() =>

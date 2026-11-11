@@ -10,13 +10,20 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { submitCommunityRequestAction } from "@/app/dashboard/start-community/actions"
 
 const PURPOSE_MIN = 20
 const PURPOSE_MAX = 600
 
-export function CommunityRequestForm() {
+export function CommunityRequestForm({
+  email,
+  phone,
+}: {
+  email: string
+  phone: string
+}) {
   const [purpose, setPurpose] = useState("")
 
   return (
@@ -58,6 +65,38 @@ export function CommunityRequestForm() {
             Only the reviewer reads this. It is not shown on the community page.
           </FieldDescription>
         </Field>
+        <div className="grid gap-5 @md/field-group:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="contactPhone">Contact number</FieldLabel>
+            <Input
+              id="contactPhone"
+              name="contactPhone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              defaultValue={phone}
+              required
+              maxLength={20}
+              placeholder="98765 43210"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="contactEmail">Contact email</FieldLabel>
+            <Input
+              id="contactEmail"
+              name="contactEmail"
+              type="email"
+              autoComplete="email"
+              defaultValue={email}
+              required
+              maxLength={254}
+            />
+          </Field>
+          <FieldDescription className="@md/field-group:col-span-2">
+            How the reviewer reaches you about this request. Only the reviewer
+            sees them.
+          </FieldDescription>
+        </div>
         <div className="flex justify-end border-t pt-4">
           <SubmitButton
             pendingLabel="Sending…"

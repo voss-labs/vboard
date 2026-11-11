@@ -6,12 +6,13 @@ import { PageHeader, Panel, StatusBadge } from "@/components/dashboard/ui"
 import { buttonVariants } from "@/components/ui/button-variants"
 import { listOwnCommunityRequests } from "@/db/queries/community-requests"
 import { formatStamp } from "@/lib/format"
+import { formatPhone } from "@/lib/phone"
 import { requireUser } from "@/lib/session"
 import { withdrawCommunityRequestAction } from "@/app/dashboard/start-community/actions"
 import { CommunityRequestForm } from "@/app/dashboard/start-community/request-form"
 
 const STEPS = [
-  "Send the name, address and what the community will do.",
+  "Send the name, address, what the community will do and how to reach you.",
   "A Super admin reviews the request.",
   "Once approved, you become its Lead and can add your team and post events.",
 ]
@@ -42,6 +43,10 @@ export default async function StartCommunityPage() {
                   <p className="text-muted-foreground text-xs break-all">
                     /{pending.slug} · sent {formatStamp(pending.createdAt)}
                   </p>
+                  <p className="text-muted-foreground text-xs break-all">
+                    Contact {formatPhone(pending.contactPhone)} ·{" "}
+                    {pending.contactEmail}
+                  </p>
                 </div>
                 <ActionForm action={withdrawCommunityRequestAction}>
                   <input type="hidden" name="requestId" value={pending.id} />
@@ -57,7 +62,11 @@ export default async function StartCommunityPage() {
             </Panel>
           ) : (
             <Panel title="Community details">
-              <CommunityRequestForm key={requests.length} />
+              <CommunityRequestForm
+                key={requests.length}
+                email={user.email}
+                phone=""
+              />
             </Panel>
           )}
           {requests.some((request) => request.status !== "pending") && (
