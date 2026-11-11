@@ -78,6 +78,13 @@ export function countWords(value: string): number {
     .filter(Boolean).length
 }
 
+export function answerSize(question: {
+  maxWords: number
+}): "line" | "short" | "long" {
+  if (question.maxWords <= 12) return "line"
+  return question.maxWords <= 80 ? "short" : "long"
+}
+
 export function wordLimitLabel(question: {
   minWords: number
   maxWords: number

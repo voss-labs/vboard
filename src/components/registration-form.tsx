@@ -1,119 +1,213 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { ActionForm } from "@/components/action-form"
-import { SubmitButton } from "@/components/submit-button"
+import { useCallback, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { Loader2Icon } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field"
+import { Card } from "@/components/ui/card"
+import { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { registerAction } from "@/app/(site)/posts/[slug]/actions"
 import {
+  answerSize,
   countWords,
   wordLimitLabel,
   type RegistrationQuestion,
 } from "@/lib/registration-form"
+import { cn } from "@/lib/utils"
 
 type ChoiceQuestion = Extract<RegistrationQuestion, { type: "choice" }>
 type TextQuestion = Extract<RegistrationQuestion, { type: "text" }>
+type Mark = (questionId: string, answered: boolean) => void
+
+const COMPACT_OPTION_LENGTH = 28
+const TINY_OPTION_LENGTH = 14
 
 export function RegistrationForm({
   postId,
+  slug,
   questions,
   requiresApproval,
+  children,
 }: {
   postId: string
+  slug: string
   questions: RegistrationQuestion[]
   requiresApproval: boolean
+  children: React.ReactNode
+}) {
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const [answered, setAnswered] = useState<Record<string, boolean>>({})
+  const mark = useCallback<Mark>(
+    (id, done) =>
+      setAnswered((prev) =>
+        Boolean(prev[id]) === done ? prev : { ...prev, [id]: done }
+      ),
+    []
+  )
+  const count = questions.filter((question) => answered[question.id]).length
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    startTransition(async () => {
+      const result = await registerAction(null, data)
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      setError(null)
+      if (result.message) toast.success(result.message)
+      router.push(`/posts/${slug}`)
+    })
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-6"
+    >
+      <input type="hidden" name="postId" value={postId} />
+      <Card className="order-2 min-w-0 gap-0 py-0 lg:order-1">
+        <ol className="divide-y">
+          {questions.map((question, index) => (
+            <li key={question.id} className="p-4 sm:px-6 sm:py-5">
+              {question.type === "choice" ? (
+                <ChoiceField
+                  number={index + 1}
+                  question={question}
+                  onAnswered={mark}
+                />
+              ) : (
+                <TextField
+                  number={index + 1}
+                  question={question}
+                  onAnswered={mark}
+                />
+              )}
+            </li>
+          ))}
+        </ol>
+        <p className="text-muted-foreground border-t px-4 py-3 text-xs leading-relaxed sm:px-6">
+          Check your answers before you submit. To change them later, cancel and
+          register again while registration is open.
+        </p>
+      </Card>
+      <div className="contents lg:sticky lg:top-24 lg:order-2 lg:block lg:space-y-4">
+        <div className="order-1 min-w-0">{children}</div>
+        <div className="bg-card ring-border sticky bottom-3 z-10 order-3 flex flex-col gap-3 rounded-xl p-3 shadow-lg ring-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4 lg:static lg:flex-col lg:items-stretch lg:p-4 lg:shadow-none">
+          {error && (
+            <p
+              role="alert"
+              className="text-destructive basis-full text-sm leading-relaxed break-words"
+            >
+              {error}
+            </p>
+          )}
+          <div className="min-w-0 space-y-1.5 sm:w-56 lg:w-auto">
+            <p
+              className="text-muted-foreground text-xs tabular-nums"
+              aria-live="polite"
+            >
+              {count} of {questions.length} answered
+            </p>
+            <progress
+              value={count}
+              max={questions.length}
+              aria-label="Questions answered"
+              className="[&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-brand [&::-moz-progress-bar]:bg-brand bg-muted block h-1 w-full appearance-none overflow-hidden rounded-full [&::-webkit-progress-value]:transition-all"
+            />
+          </div>
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full sm:w-auto lg:w-full"
+            disabled={pending}
+            aria-busy={pending}
+          >
+            {pending && (
+              <Loader2Icon data-icon="inline-start" className="animate-spin" />
+            )}
+            {pending
+              ? requiresApproval
+                ? "Sending request…"
+                : "Registering…"
+              : requiresApproval
+                ? "Request to join"
+                : "Register"}
+          </Button>
+        </div>
+      </div>
+    </form>
+  )
+}
+
+function Prompt({
+  number,
+  question,
+}: {
+  number: number
+  question: RegistrationQuestion
 }) {
   return (
-    <Card id="registration-form" className="scroll-mt-24">
-      <CardHeader>
-        <CardTitle>Registration form</CardTitle>
-        <CardDescription>
-          Your name, VIT email, roll number, department and year are shared with
-          the community team automatically. Your answers go to the same team.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ActionForm action={registerAction}>
-          <input type="hidden" name="postId" value={postId} />
-          <FieldGroup>
-            {questions.map((question) =>
-              question.type === "choice" ? (
-                <ChoiceField key={question.id} question={question} />
-              ) : (
-                <TextField key={question.id} question={question} />
-              )
-            )}
-            <div className="space-y-3 border-t pt-5">
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                Check your answers before you submit. To change them later,
-                cancel and register again while registration is open.
-              </p>
-              <SubmitButton
-                size="lg"
-                className="w-full sm:w-auto"
-                pendingLabel={
-                  requiresApproval ? "Sending request…" : "Registering…"
-                }
-              >
-                {requiresApproval ? "Request to join" : "Register"}
-              </SubmitButton>
-            </div>
-          </FieldGroup>
-        </ActionForm>
-      </CardContent>
-    </Card>
-  )
-}
-
-function Requirement({ required }: { required: boolean }) {
-  return required ? (
     <>
-      <span className="text-destructive" aria-hidden>
-        *
+      <span className="min-w-0 break-words">
+        <span className="text-muted-foreground tabular-nums">{number}. </span>
+        {question.label}
+        {question.required && (
+          <>
+            <span className="text-destructive" aria-hidden>
+              {" "}
+              *
+            </span>
+            <span className="sr-only"> Required</span>
+          </>
+        )}
       </span>
-      <span className="sr-only">Required</span>
+      {!question.required && (
+        <span className="text-muted-foreground text-xs font-normal">
+          Optional
+        </span>
+      )}
     </>
-  ) : (
-    <span className="text-muted-foreground text-xs font-normal">Optional</span>
   )
 }
 
-function ChoiceField({ question }: { question: ChoiceQuestion }) {
-  const options = useRef<HTMLDivElement>(null)
-  const [picked, setPicked] = useState(false)
-  const clear = () => {
-    options.current
-      ?.querySelectorAll<HTMLInputElement>("input[type=radio]")
-      .forEach((input) => {
-        input.checked = false
-      })
-    setPicked(false)
+function ChoiceField({
+  number,
+  question,
+  onAnswered,
+}: {
+  number: number
+  question: ChoiceQuestion
+  onAnswered: Mark
+}) {
+  const [value, setValue] = useState<string | null>(null)
+  const pick = (next: string | null) => {
+    setValue(next)
+    onAnswered(question.id, next !== null)
   }
+  const longest = Math.max(...question.options.map((option) => option.length))
+
   return (
-    <FieldSet className="gap-2">
+    <FieldSet className="gap-3">
       <FieldLegend
         variant="label"
-        className="flex flex-wrap items-baseline gap-2 break-words"
+        className="flex flex-wrap items-baseline gap-x-2 gap-y-1 leading-snug"
       >
-        {question.label}
-        <Requirement required={question.required} />
+        <Prompt number={number} question={question} />
       </FieldLegend>
-      <div ref={options} className="grid gap-2">
+      <div
+        className={cn(
+          "grid gap-2",
+          longest <= TINY_OPTION_LENGTH
+            ? "grid-cols-2"
+            : longest <= COMPACT_OPTION_LENGTH && "sm:grid-cols-2"
+        )}
+      >
         {question.options.map((option) => (
           <label
             key={option}
@@ -125,20 +219,21 @@ function ChoiceField({ question }: { question: ChoiceQuestion }) {
               value={option}
               aria-label={option}
               required={question.required}
-              onChange={() => setPicked(true)}
+              checked={value === option}
+              onChange={() => pick(option)}
               className="accent-primary size-4 shrink-0 outline-none"
             />
             <span className="min-w-0 break-words">{option}</span>
           </label>
         ))}
       </div>
-      {!question.required && picked && (
+      {!question.required && value !== null && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
           className="w-fit"
-          onClick={clear}
+          onClick={() => pick(null)}
         >
           Clear choice
         </Button>
@@ -147,39 +242,67 @@ function ChoiceField({ question }: { question: ChoiceQuestion }) {
   )
 }
 
-function TextField({ question }: { question: TextQuestion }) {
+function TextField({
+  number,
+  question,
+  onAnswered,
+}: {
+  number: number
+  question: TextQuestion
+  onAnswered: Mark
+}) {
   const [words, setWords] = useState(0)
   const id = `answer-${question.id}`
+  const size = answerSize(question)
   const outside =
     words > 0 && (words > question.maxWords || words < question.minWords)
+  const read = (value: string) => {
+    const next = countWords(value)
+    setWords(next)
+    onAnswered(question.id, next > 0)
+  }
+  const shared = {
+    id,
+    name: `answer.${question.id}`,
+    required: question.required,
+    "aria-invalid": outside || undefined,
+    "aria-describedby": `${id}-limit`,
+  }
+
   return (
-    <Field>
-      <FieldLabel htmlFor={id} className="flex-wrap items-baseline break-words">
-        {question.label}
-        <Requirement required={question.required} />
+    <Field className="gap-3">
+      <FieldLabel
+        htmlFor={id}
+        className="flex-wrap items-baseline gap-x-2 gap-y-1 leading-snug"
+      >
+        <Prompt number={number} question={question} />
       </FieldLabel>
-      <Textarea
-        id={id}
-        name={`answer.${question.id}`}
-        required={question.required}
-        aria-invalid={outside || undefined}
-        aria-describedby={`${id}-limit ${id}-count`}
-        className="min-h-40"
-        onChange={(event) => setWords(countWords(event.target.value))}
-      />
-      <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs">
-        <span id={`${id}-limit`} className="text-muted-foreground">
-          {wordLimitLabel(question)}
-        </span>
-        <span
-          id={`${id}-count`}
-          aria-live="polite"
-          className={
-            outside
-              ? "text-destructive tabular-nums"
-              : "text-muted-foreground tabular-nums"
-          }
-        >
+      {size === "line" ? (
+        <Input
+          {...shared}
+          autoComplete="off"
+          className="lg:max-w-md"
+          onChange={(event) => read(event.target.value)}
+        />
+      ) : (
+        <Textarea
+          {...shared}
+          className={size === "long" ? "min-h-32" : "min-h-20"}
+          onChange={(event) => read(event.target.value)}
+        />
+      )}
+      <div
+        id={`${id}-limit`}
+        aria-live="polite"
+        className={cn(
+          "flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs",
+          outside ? "text-destructive" : "text-muted-foreground",
+          size === "line" && "lg:max-w-md",
+          size === "line" && !outside && question.minWords <= 1 && "sr-only"
+        )}
+      >
+        <span>{wordLimitLabel(question)}</span>
+        <span className="tabular-nums">
           {words} of {question.maxWords} words
         </span>
       </div>
