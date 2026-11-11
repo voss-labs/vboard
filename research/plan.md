@@ -22,6 +22,7 @@ What's in:
 - Signup gated by `@vit.edu.in` + Resend-verified email
 - Profile: rollNumber (trust-on-signup), department and division derived from it, year, optional bio. Asked once, the first time someone registers for an event; registration needs a complete profile
 - Communities (clubs / societies as hosts)
+- Community requests: any signed-in student asks to start a community; a Super admin approves or rejects it, and approval creates the community with the requester as its Lead
 - Flat community membership — anyone in = full rights for that community
 - Unified `post` model — text announcement OR event, depending on whether event fields are filled
 - One-click direct registration with optional approval flow
@@ -100,6 +101,13 @@ vboard-owned tables:
 - logoUrl, coverImageUrl
 - createdBy (FK)
 - isActive, timestamps
+
+### community_request
+
+- requesterId (FK), name, slug, description, purpose, contactPhone, contactEmail (the last three read only by the reviewer)
+- status (enum: `pending` | `approved` | `rejected` | `withdrawn`), one pending request per requester
+- communityId (FK, set on approval), decidedBy, decidedAt, decisionNote
+- timestamps
 
 ### community_member
 

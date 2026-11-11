@@ -28,3 +28,10 @@ export const registrationStatusEnum = pgEnum("registration_status", [
   "attended",
   "no_show",
 ])
+
+export const communityRequestStatusEnum = pgEnum("community_request_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "withdrawn",
+])
