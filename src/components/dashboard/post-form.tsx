@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ActionForm } from "@/components/action-form"
+import { PosterField } from "@/components/dashboard/poster-field"
 import { QuestionBuilder } from "@/components/dashboard/question-builder"
 import { FormSelect } from "@/components/form-select"
 import { SubmitButton } from "@/components/submit-button"
@@ -41,6 +42,7 @@ type Defaults = {
   capacity: string
   requiresApproval: boolean
   registrationQuestions: RegistrationQuestion[]
+  posterUrl: string | null
 }
 
 export const EMPTY_POST: Defaults = {
@@ -58,6 +60,7 @@ export const EMPTY_POST: Defaults = {
   capacity: "",
   requiresApproval: false,
   registrationQuestions: [],
+  posterUrl: null,
 }
 
 export function PostForm({
@@ -136,6 +139,7 @@ export function PostForm({
                   required
                 />
               </Field>
+              <PosterField current={defaults.posterUrl} />
             </FieldGroup>
           </CardContent>
         </Card>

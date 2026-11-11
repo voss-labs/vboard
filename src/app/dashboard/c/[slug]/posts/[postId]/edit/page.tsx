@@ -6,6 +6,7 @@ import { PostForm } from "@/components/dashboard/post-form"
 import { getPostById } from "@/db/queries/posts"
 import { hasRegistrations } from "@/db/queries/registrations"
 import { toCampusInputValue } from "@/lib/format"
+import { mediaUrl } from "@/lib/media"
 import { requireCommunityAccess } from "@/lib/session"
 import { updatePostAction } from "@/app/dashboard/c/[slug]/posts/actions"
 
@@ -56,6 +57,7 @@ export default async function EditPostPage({
           capacity: post.capacity?.toString() ?? "",
           requiresApproval: post.requiresApproval,
           registrationQuestions: post.registrationQuestions,
+          posterUrl: mediaUrl(post.imageUrl),
         }}
       />
     </>

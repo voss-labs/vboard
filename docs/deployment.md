@@ -18,7 +18,7 @@ Set these in Vercel's Production environment before deploying. Use matching bran
 | `AWS_REGION` | The storage endpoint's region; override any unrelated Vercel default. |
 | `AWS_ACCESS_KEY_ID` | Production branch storage credential ID. |
 | `AWS_SECRET_ACCESS_KEY` | Matching storage secret with write access, kept server-side. |
-| `NEON_STORAGE_BUCKET` | `vboard-assets`, declared as `public_read` in `neon.ts`. |
+| `NEON_STORAGE_BUCKET` | `vboard`, the private bucket declared in `neon.ts`. Images are served through `/media/<key>`, never from the bucket directly. |
 
 `DATABASE_URL` is the only runtime database URL. Both domain transactions and Better Auth's local tables use this restricted principal. No auth-specific URL/password or owner fallback is used. The shared trusted server credential can CRUD Better Auth's four tables; application/import boundaries isolate the adapter, while domain data still uses FORCE RLS and checked projections.
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Lock } from "lucide-react"
@@ -10,6 +11,7 @@ import { Card } from "@/components/ui/card"
 import { withDb } from "@/db"
 import { getPostDetailBySlug } from "@/db/queries/posts"
 import { formatShortDate } from "@/lib/format"
+import { mediaUrl } from "@/lib/media"
 import { canSeeLocation, seatsLeft } from "@/lib/registration"
 import { getTrustedActor } from "@/lib/session"
 import {
@@ -37,6 +39,7 @@ export default async function PostPage({ params }: Props) {
   if (post.visibility === "vit_only" && !user)
     return <SignInWall next={`/posts/${post.slug}`} title={post.title} />
   const questions = post.registrationQuestions
+  const poster = mediaUrl(post.imageUrl)
   const answers =
     registration && registration.status !== "cancelled"
       ? registration.answers
@@ -68,7 +71,26 @@ export default async function PostPage({ params }: Props) {
             : "mx-auto max-w-3xl space-y-4"
         }
       >
-        <Card className="min-w-0 gap-0 py-0 lg:col-start-1 lg:row-start-1">
+        <Card className="min-w-0 gap-0 overflow-hidden py-0 lg:col-start-1 lg:row-start-1">
+          {poster && (
+            <a
+              href={poster}
+              target="_blank"
+              rel="noreferrer"
+              className="bg-muted block border-b"
+              aria-label="Open the poster at full size"
+            >
+              <Image
+                src={poster}
+                alt={`Poster for ${post.title}`}
+                width={1280}
+                height={720}
+                sizes="(min-width: 1024px) 760px, 100vw"
+                priority
+                className="mx-auto h-auto max-h-[28rem] w-auto max-w-full object-contain"
+              />
+            </a>
+          )}
           <header className="space-y-3 p-4 sm:p-6">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <Link
