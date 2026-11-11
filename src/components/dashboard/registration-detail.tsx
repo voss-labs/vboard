@@ -2,11 +2,10 @@
 
 import { useState } from "react"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
-import { ActionForm } from "@/components/action-form"
 import { StatusBadge } from "@/components/dashboard/ui"
 import type { RegistrationRow } from "@/components/dashboard/registrations-table"
+import type { Decide } from "@/components/dashboard/use-registration-decisions"
 import { LinkedText } from "@/components/linked-text"
-import { SubmitButton } from "@/components/submit-button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,11 +15,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { canReceiveDecision } from "@/lib/registration"
 import { countWords, type RegistrationQuestion } from "@/lib/registration-form"
-import { decideRegistrationsAction } from "@/app/dashboard/c/[slug]/posts/actions"
-
-const CAN_APPROVE = ["pending", "rejected"]
-const CAN_REJECT = ["pending", "approved"]
 
 function initialsOf(name: string) {
   return name
@@ -44,9 +40,8 @@ function Fact({ label, value }: { label: string; value: string | null }) {
 export function RegistrationDetail({
   row,
   questions,
-  slug,
-  postId,
   canDecide,
+  onDecide,
   position,
   total,
   onClose,
@@ -55,9 +50,8 @@ export function RegistrationDetail({
 }: {
   row: RegistrationRow | null
   questions: RegistrationQuestion[]
-  slug: string
-  postId: string
   canDecide: boolean
+  onDecide: Decide
   position: number | null
   total: number
   onClose: () => void
@@ -66,8 +60,10 @@ export function RegistrationDetail({
 }) {
   const [shown, setShown] = useState(row)
   if (row && row !== shown) setShown(row)
-  const canApprove = !!shown && canDecide && CAN_APPROVE.includes(shown.status)
-  const canReject = !!shown && canDecide && CAN_REJECT.includes(shown.status)
+  const canApprove =
+    !!shown && canDecide && canReceiveDecision("approve", shown.status)
+  const canReject =
+    !!shown && canDecide && canReceiveDecision("reject", shown.status)
   const answered = shown
     ? questions.filter((q) => shown.answers[q.id]).length
     : 0
@@ -207,34 +203,21 @@ export function RegistrationDetail({
                 </Button>
               </div>
               {(canApprove || canReject) && (
-                <ActionForm
-                  key={shown.id}
-                  action={decideRegistrationsAction}
-                  className="flex flex-wrap justify-end gap-2 [&>[role=alert]]:mt-0 [&>[role=alert]]:w-full"
-                >
-                  <input type="hidden" name="slug" value={slug} />
-                  <input type="hidden" name="postId" value={postId} />
-                  <input type="hidden" name="registrationId" value={shown.id} />
+                <div className="flex flex-wrap justify-end gap-2">
                   {canReject && (
-                    <SubmitButton
-                      name="decision"
-                      value="reject"
+                    <Button
                       variant="destructive"
-                      pendingLabel="Applying…"
+                      onClick={() => onDecide([shown.id], "reject")}
                     >
                       Reject
-                    </SubmitButton>
+                    </Button>
                   )}
                   {canApprove && (
-                    <SubmitButton
-                      name="decision"
-                      value="approve"
-                      pendingLabel="Applying…"
-                    >
+                    <Button onClick={() => onDecide([shown.id], "approve")}>
                       Approve
-                    </SubmitButton>
+                    </Button>
                   )}
-                </ActionForm>
+                </div>
               )}
             </div>
           </>

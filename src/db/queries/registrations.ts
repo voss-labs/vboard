@@ -1,11 +1,16 @@
 import { and, eq, inArray, sql } from "drizzle-orm"
 import type { DbContext } from "@/db"
 import { registration } from "@/db/schema"
-import { createAuditLog } from "@/db/queries/audit"
+import { createAuditLog, createAuditLogs } from "@/db/queries/audit"
 import type {
   RegistrationAnswers,
   RegistrationQuestion,
 } from "@/lib/registration-form"
+import {
+  canReceiveDecision,
+  DECISION_RESULT,
+  type RegistrationDecision,
+} from "@/lib/registration"
 import {
   projectionRows,
   requireActor,
@@ -120,22 +125,6 @@ export async function cancelRegistration(ctx: DbContext, postId: string) {
     communityId: scope.communityId,
   })
 }
-export type RegistrationDecision =
-  "approve" | "reject" | "checkin" | "noshow" | "reset"
-const DECISIONS = {
-  approve: "approved",
-  reject: "rejected",
-  checkin: "attended",
-  noshow: "no_show",
-  reset: "approved",
-} as const
-const SOURCES = {
-  approve: ["pending", "rejected"],
-  reject: ["pending", "approved"],
-  checkin: ["approved", "no_show"],
-  noshow: ["approved"],
-  reset: ["attended", "no_show"],
-} as const
 export async function decideRegistrations(
   ctx: DbContext,
   input: { postId: string; ids: string[]; decision: RegistrationDecision }
@@ -161,26 +150,28 @@ export async function decideRegistrations(
     rows.some(
       (row) =>
         row.postId !== input.postId ||
-        !(SOURCES[input.decision] as readonly string[]).includes(row.status)
+        !canReceiveDecision(input.decision, row.status)
     )
   )
     throw new Error("The selected registrations cannot receive this decision")
   await ctx.tx
     .update(registration)
     .set({
-      status: DECISIONS[input.decision],
+      status: DECISION_RESULT[input.decision],
       decidedBy: actorId,
       decidedAt: new Date(),
       checkedInAt: input.decision === "checkin" ? new Date() : null,
     })
     .where(inArray(registration.id, ids))
-  for (const row of rows)
-    await createAuditLog(ctx, {
+  await createAuditLogs(
+    ctx,
+    rows.map((row) => ({
       action: `registration.${input.decision}`,
       targetType: "registration",
       targetId: row.id,
       communityId: scope.communityId,
-    })
+    }))
+  )
 }
 export async function listRegistrations(ctx: DbContext, postId: string) {
   return projectionRows<{

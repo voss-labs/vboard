@@ -11,6 +11,7 @@ import {
   STATUS_FILTERS,
 } from "@/components/dashboard/registrations-toolbar"
 import { EmptyState, StatusBadge } from "@/components/dashboard/ui"
+import { useRegistrationDecisions } from "@/components/dashboard/use-registration-decisions"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -47,7 +48,7 @@ export type RegistrationRow = {
 const DEFAULT_ANSWER_COLUMNS = 2
 
 export function RegistrationsTable({
-  rows,
+  rows: saved,
   questions,
   slug,
   postId,
@@ -63,6 +64,7 @@ export function RegistrationsTable({
   canCheckIn: boolean
   initialFilter: string
 }) {
+  const { rows, decide } = useRegistrationDecisions(saved, slug, postId)
   const choiceQuestions = questions.filter((q) => q.type === "choice")
   const [status, setStatus] = useState(
     STATUS_FILTERS.includes(initialFilter) ? initialFilter : "all"
@@ -345,21 +347,19 @@ export function RegistrationsTable({
       )}
       {selectable && selected.size > 0 && (
         <RegistrationBulkActions
-          slug={slug}
-          postId={postId}
-          selected={selected}
+          selected={rows.filter((r) => selected.has(r.id))}
           canDecide={canDecide}
           canCheckIn={canCheckIn}
-          onSelectedChange={setSelected}
+          onDecide={decide}
+          onClear={() => setSelected(new Set())}
         />
       )}
       {questions.length > 0 && (
         <RegistrationDetail
           row={openRow}
           questions={questions}
-          slug={slug}
-          postId={postId}
           canDecide={canDecide}
+          onDecide={decide}
           position={at < 0 ? null : at + 1}
           total={visible.length}
           onClose={() => setOpen(null)}

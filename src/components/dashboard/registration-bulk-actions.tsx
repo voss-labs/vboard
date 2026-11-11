@@ -1,14 +1,16 @@
 "use client"
 
 import { XIcon } from "lucide-react"
-import { ActionForm } from "@/components/action-form"
-import { SubmitButton } from "@/components/submit-button"
+import type { Decide } from "@/components/dashboard/use-registration-decisions"
 import { Button } from "@/components/ui/button"
 import type { ButtonVariants } from "@/components/ui/button-variants"
-import { decideRegistrationsAction } from "@/app/dashboard/c/[slug]/posts/actions"
+import {
+  canReceiveDecision,
+  type RegistrationDecision,
+} from "@/lib/registration"
 
 const DECISIONS: {
-  value: string
+  value: RegistrationDecision
   label: string
   variant: ButtonVariants["variant"]
   needs: "decide" | "checkIn"
@@ -31,59 +33,65 @@ const DECISIONS: {
 ]
 
 export function RegistrationBulkActions({
-  slug,
-  postId,
   selected,
   canDecide,
   canCheckIn,
-  onSelectedChange,
+  onDecide,
+  onClear,
 }: {
-  slug: string
-  postId: string
-  selected: Set<string>
+  selected: { id: string; status: string }[]
   canDecide: boolean
   canCheckIn: boolean
-  onSelectedChange: (next: Set<string>) => void
+  onDecide: Decide
+  onClear: () => void
 }) {
   const allowed = { decide: canDecide, checkIn: canCheckIn }
+  const actions = DECISIONS.filter((d) => allowed[d.needs])
+    .map((d) => ({
+      ...d,
+      ids: selected
+        .filter((row) => canReceiveDecision(d.value, row.status))
+        .map((row) => row.id),
+    }))
+    .filter((d) => d.ids.length > 0)
 
   return (
-    <ActionForm
-      action={decideRegistrationsAction}
-      onDone={() => onSelectedChange(new Set())}
-      className="bg-card/95 supports-backdrop-filter:bg-card/80 sticky bottom-0 z-10 flex flex-wrap items-center gap-2 border-t px-4 py-3 backdrop-blur md:px-6 [&>[role=alert]]:mt-0 [&>[role=alert]]:w-full"
-    >
-      <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="postId" value={postId} />
-      {[...selected].map((id) => (
-        <input key={id} type="hidden" name="registrationId" value={id} />
-      ))}
+    <div className="bg-card/95 supports-backdrop-filter:bg-card/80 sticky bottom-0 z-10 flex flex-wrap items-center gap-2 border-t px-4 py-3 backdrop-blur md:px-6">
       <div className="mr-auto flex items-center gap-1">
         <span aria-live="polite" className="text-sm font-medium tabular-nums">
-          {selected.size} selected
+          {selected.length} selected
         </span>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
           aria-label="Clear selection"
-          onClick={() => onSelectedChange(new Set())}
+          onClick={onClear}
         >
           <XIcon />
         </Button>
       </div>
-      {DECISIONS.filter((d) => allowed[d.needs]).map((d) => (
-        <SubmitButton
+      {actions.length === 0 && (
+        <p className="text-muted-foreground text-xs">
+          Nothing to do for this selection.
+        </p>
+      )}
+      {actions.map((d) => (
+        <Button
           key={d.value}
-          name="decision"
-          value={d.value}
           size="sm"
           variant={d.variant}
-          pendingLabel="Applying…"
+          onClick={() => {
+            onDecide(d.ids, d.value)
+            onClear()
+          }}
         >
           {d.label}
-        </SubmitButton>
+          {d.ids.length < selected.length && (
+            <span className="tabular-nums opacity-70">{d.ids.length}</span>
+          )}
+        </Button>
       ))}
-    </ActionForm>
+    </div>
   )
 }
