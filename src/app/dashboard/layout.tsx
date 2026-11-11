@@ -70,6 +70,7 @@ export default async function DashboardLayout({
           icon: "communities",
         },
         { title: "People", url: "/dashboard/admin/people", icon: "people" },
+        { title: "Updates", url: "/dashboard/admin/updates", icon: "updates" },
         { title: "Audit log", url: "/dashboard/admin/audit", icon: "audit" },
       ],
     })

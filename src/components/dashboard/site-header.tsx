@@ -24,6 +24,7 @@ const LABELS: Record<string, string> = {
   communities: "Communities",
   "start-community": "Start a community",
   people: "People",
+  updates: "Updates",
   audit: "Audit log",
   new: "New post",
   edit: "Edit post",
