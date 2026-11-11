@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Posters and logos: a post takes a poster (PNG, JPEG or WebP, up to 4 MiB) from its form, shown on the post page and as a thumbnail in the feed; posters and community logos live in the private `vboard` bucket and are served through `/media/<key>` with long-lived caching. Saving a form without choosing a file no longer fails.
 - Event management page: rare and destructive post actions move into a More menu with confirmation; the registrations table gets one Filter answers menu with removable chips, a Columns menu for answer columns, a header select-all, division and year under the roll number, and a selection bar that appears only when rows are ticked.
 - Post pages lead with the post: the community header and tabs stay on the community's own pages, and the manage page shows one back link, the title, a one-line summary and its actions.
 - Registration review sheet: profile facts in a labelled row, numbered answers with unanswered questions collapsed to one line, links in text answers, and previous / next beside Approve and Reject in the footer, with the left and right arrow keys moving between registrations.

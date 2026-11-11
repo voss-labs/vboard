@@ -8,6 +8,7 @@ export function toCalendarEvent(post: PostCardPost): CalendarEvent {
     slug: post.slug,
     title: post.title,
     body: post.body,
+    imageUrl: post.imageUrl,
     communitySlug: post.communitySlug,
     communityName: post.communityName,
     isEvent: post.isEvent,

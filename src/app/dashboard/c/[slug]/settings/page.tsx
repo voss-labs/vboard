@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { isStoredCommunityLogo } from "@/lib/community-logo"
+import { IMAGE_ACCEPT, isStoredMedia } from "@/lib/media"
 import { requireCommunityAccess } from "@/lib/session"
 import { updateCommunityAction } from "@/app/dashboard/c/[slug]/settings/actions"
 
@@ -76,7 +76,7 @@ export default async function CommunitySettingsPage({
                       id="logoFile"
                       name="logoFile"
                       type="file"
-                      accept="image/png,image/jpeg,image/webp"
+                      accept={IMAGE_ACCEPT}
                       aria-describedby="logoFile-help"
                     />
                     <FieldDescription id="logoFile-help">
@@ -91,7 +91,7 @@ export default async function CommunitySettingsPage({
                       type="url"
                       aria-label="Logo image URL"
                       defaultValue={
-                        isStoredCommunityLogo(community.logoUrl)
+                        isStoredMedia(community.logoUrl)
                           ? ""
                           : (community.logoUrl ?? "")
                       }

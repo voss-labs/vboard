@@ -2,12 +2,13 @@ import "server-only"
 import { randomUUID } from "node:crypto"
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
+  NoSuchKey,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3"
 import { z } from "zod"
-import type { CommunityLogoUpload } from "@/lib/community-logo"
-import { isStoredCommunityLogo } from "@/lib/community-logo"
+import { MEDIA, type ImageUpload, type MediaKind } from "@/lib/media"
 
 const storageSchema = z.object({
   endpoint: z.url().refine((value) => {
@@ -49,73 +50,57 @@ function storageClient(config: ReturnType<typeof storageConfig>) {
   })
 }
 
-export function communityLogoUrl(reference: string | null) {
-  if (!reference || !isStoredCommunityLogo(reference)) return reference
-  const endpoint = process.env.AWS_ENDPOINT_URL_S3
-  const bucket = process.env.NEON_STORAGE_BUCKET
-  if (!endpoint || !bucket) return null
+async function send<T>(work: (client: S3Client, bucket: string) => Promise<T>) {
+  const config = storageConfig()
+  const client = storageClient(config)
   try {
-    const stored = new URL(reference)
-    const origin = new URL(endpoint)
-    if (
-      origin.protocol !== "https:" ||
-      origin.username ||
-      origin.password ||
-      origin.search ||
-      origin.hash ||
-      stored.hostname !== bucket ||
-      stored.search ||
-      stored.hash ||
-      !/^\/community-logos\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpg|webp)$/.test(
-        stored.pathname
-      )
-    )
-      return null
-    return new URL(
-      `${bucket}${stored.pathname}`,
-      `${origin.href.replace(/\/$/, "")}/`
-    ).href
-  } catch {
-    return null
+    return await work(client, config.bucket)
+  } finally {
+    client.destroy()
   }
 }
 
-export async function uploadCommunityLogo(
+const within = () => ({ abortSignal: AbortSignal.timeout(15_000) })
+
+export async function uploadMedia(
+  kind: MediaKind,
   communityId: string,
-  image: CommunityLogoUpload
+  image: ImageUpload
 ) {
-  const config = storageConfig()
-  const client = storageClient(config)
-  const key = `community-logos/${communityId}/${randomUUID()}.${image.extension}`
-  try {
+  const key = `${MEDIA[kind].folder}/${communityId}/${randomUUID()}.${image.extension}`
+  return send(async (client, bucket) => {
     await client.send(
       new PutObjectCommand({
-        Bucket: config.bucket,
+        Bucket: bucket,
         Key: key,
         Body: image.body,
         ContentType: image.contentType,
         ContentLength: image.body.byteLength,
         CacheControl: "public, max-age=31536000, immutable",
       }),
-      { abortSignal: AbortSignal.timeout(15_000) }
+      within()
     )
-  } finally {
-    client.destroy()
-  }
-  return { key, reference: `neon://${config.bucket}/${key}` }
+    return { key, reference: `neon://${bucket}/${key}` }
+  })
 }
 
-export async function discardCommunityLogo(key: string) {
-  const config = storageConfig()
-  const client = storageClient(config)
-  try {
-    await client.send(
-      new DeleteObjectCommand({ Bucket: config.bucket, Key: key }),
-      {
-        abortSignal: AbortSignal.timeout(15_000),
-      }
-    )
-  } finally {
-    client.destroy()
-  }
+export async function discardMedia(key: string) {
+  await send((client, bucket) =>
+    client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }), within())
+  )
+}
+
+export async function readMedia(key: string) {
+  return send(async (client, bucket) => {
+    try {
+      const object = await client.send(
+        new GetObjectCommand({ Bucket: bucket, Key: key }),
+        within()
+      )
+      return (await object.Body?.transformToByteArray()) ?? null
+    } catch (error) {
+      if (error instanceof NoSuchKey) return null
+      throw error
+    }
+  })
 }

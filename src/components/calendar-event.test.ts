@@ -7,6 +7,7 @@ const event: PostCardPost = {
   slug: "campus-event",
   title: "Campus event",
   body: "Event information",
+  imageUrl: null,
   communitySlug: "community",
   communityName: "Community",
   isEvent: true,
