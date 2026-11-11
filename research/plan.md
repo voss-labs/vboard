@@ -23,6 +23,7 @@ What's in:
 - Profile: rollNumber (trust-on-signup), department and division derived from it, year, contact number, optional bio. Asked once, the first time someone registers for an event; registration needs a complete profile
 - Communities (clubs / societies as hosts)
 - Community requests: any signed-in student asks to start a community; a Super admin approves or rejects it, and approval creates the community with the requester as its Lead
+- Updates email: a Super admin emails everyone who has signed in, or only people with or without a complete profile, from the workspace; one copy per person through Resend
 - Flat community membership — anyone in = full rights for that community
 - Unified `post` model — text announcement OR event, depending on whether event fields are filled
 - One-click direct registration with optional approval flow

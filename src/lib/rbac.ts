@@ -8,6 +8,7 @@ export type SiteCapability =
   | "user:read"
   | "post:moderate"
   | "audit:read"
+  | "update:send"
 
 export type CommunityCapability =
   | "community:update"
