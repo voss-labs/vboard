@@ -6,14 +6,14 @@ Date: 2026-10-18. Status: discovery; no authorization/schema/data changes implem
 
 Site and community access are independent. Every account is a student by default. A person can be an organizer in one community and an ordinary participant in another.
 
-| Role        | Scope          | Authority                                                                            |
-| ----------- | -------------- | ------------------------------------------------------------------------------------ |
-| Student     | Own account    | Profile, register/cancel, own registrations                                          |
-| Volunteer   | Community      | Read team/drafts/attendees and manage attendance                                     |
-| Manager     | Community      | Volunteer authority plus author/publish posts, registration decisions and CSV export |
-| Lead        | Community      | Manager authority plus team and settings                                             |
-| Admin       | Site           | Community lifecycle, lead appointments, people/audit, all community operations       |
-| Super admin | Site bootstrap | Admin authority plus appoint/remove admins; derived from SUPER_ADMIN_EMAILS          |
+| Role | Scope | Authority |
+| --- | --- | --- |
+| Student | Own account | Profile, register/cancel, own registrations |
+| Volunteer | Community | Read team/drafts/attendees and manage attendance |
+| Manager | Community | Volunteer authority plus author/publish posts, registration decisions and CSV export |
+| Lead | Community | Manager authority plus team and settings |
+| Admin | Site | Community lifecycle, lead appointments, people/audit, all community operations |
+| Super admin | Site bootstrap | Admin authority plus appoint/remove admins; derived from SUPER_ADMIN_EMAILS |
 
 Visitor is an unauthenticated state. The persisted site enum has only student/admin; super admin is not a database role. Membership means organizing staff, not a student following a club.
 
