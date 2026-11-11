@@ -68,6 +68,7 @@ export function PostForm({
   canPublish,
   mode,
   questionsLocked = false,
+  pickedChoices = [],
 }: {
   action: (
     prev: ActionResult | null,
@@ -79,6 +80,7 @@ export function PostForm({
   canPublish: boolean
   mode: "create" | "edit"
   questionsLocked?: boolean
+  pickedChoices?: string[]
 }) {
   const [isEvent, setIsEvent] = useState(defaults.isEvent)
 
@@ -215,6 +217,7 @@ export function PostForm({
               <QuestionBuilder
                 initial={defaults.registrationQuestions}
                 locked={questionsLocked}
+                pickedChoices={pickedChoices}
               />
             </CardContent>
           </Card>

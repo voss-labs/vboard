@@ -4,7 +4,8 @@ import { WorkspaceRouteTitle } from "@/components/dashboard/route-context"
 import { notFound } from "next/navigation"
 import { PostForm } from "@/components/dashboard/post-form"
 import { getPostById } from "@/db/queries/posts"
-import { hasRegistrations } from "@/db/queries/registrations"
+import { listRegistrations } from "@/db/queries/registrations"
+import { pickedChoices } from "@/lib/registration-form"
 import { toCampusInputValue } from "@/lib/format"
 import { requireCommunityAccess } from "@/lib/session"
 import { updatePostAction } from "@/app/dashboard/c/[slug]/posts/actions"
@@ -23,9 +24,11 @@ export default async function EditPostPage({
       )
     : null
   if (!post || post.communityId !== access.community.id) notFound()
-  const questionsLocked = await withDb({ userId: access.user.id }, (ctx) =>
-    hasRegistrations(ctx, post.id)
-  )
+  const answers = post.isEvent
+    ? await withDb({ userId: access.user.id }, async (ctx) =>
+        (await listRegistrations(ctx, post.id)).map((row) => row.answers)
+      )
+    : []
 
   return (
     <>
@@ -40,7 +43,8 @@ export default async function EditPostPage({
         postId={post.id}
         canPublish={access.can("post:publish")}
         mode="edit"
-        questionsLocked={questionsLocked}
+        questionsLocked={answers.length > 0}
+        pickedChoices={pickedChoices(post.registrationQuestions, answers)}
         defaults={{
           title: post.title,
           body: post.body,

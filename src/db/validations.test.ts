@@ -32,7 +32,10 @@ const questions = [
     type: "choice",
     label: "Which role do you want to interview for?",
     required: true,
-    options: ["Frontend", "Backend"],
+    options: [
+      { id: "11111111-1111-4111-8111-111111111111", label: "Frontend" },
+      { id: "22222222-2222-4222-8222-222222222222", label: "Backend" },
+    ],
   },
   {
     id: "8a2d4e61-9c3f-4b5a-a7d2-1e0f3c5b7d22",
@@ -124,7 +127,7 @@ describe("postFormSchema registration questions", () => {
     for (const value of [
       "{}",
       '"text"',
-      JSON.stringify([{ ...questions[0], options: ["Frontend"] }]),
+      JSON.stringify([{ ...questions[0], options: ["Frontend", "Backend"] }]),
       JSON.stringify([{ ...questions[1], minWords: 400 }]),
       JSON.stringify([questions[0], questions[0]]),
     ])

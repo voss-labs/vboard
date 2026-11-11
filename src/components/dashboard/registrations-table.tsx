@@ -45,16 +45,6 @@ const FILTERS = [
 ]
 const ANY = "all"
 
-function answeredChoices(
-  question: Extract<RegistrationQuestion, { type: "choice" }>,
-  rows: RegistrationRow[]
-): string[] {
-  const earlier = rows
-    .map((row) => row.answers[question.id])
-    .filter((answer) => answer && !question.options.includes(answer))
-  return [...new Set([...question.options, ...earlier])]
-}
-
 export function RegistrationsTable({
   rows,
   questions,
@@ -184,9 +174,9 @@ export function RegistrationsTable({
               }}
               items={[
                 { value: ANY, label: `All: ${c.label}` },
-                ...answeredChoices(c, rows).map((option) => ({
-                  value: option,
-                  label: option,
+                ...c.options.map((option) => ({
+                  value: option.label,
+                  label: option.label,
                 })),
               ]}
             />

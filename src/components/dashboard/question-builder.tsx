@@ -26,7 +26,7 @@ type Draft = {
   type: "choice" | "text"
   label: string
   required: boolean
-  options: string[]
+  options: { id: string; label: string }[]
   minWords: string
   maxWords: string
 }
@@ -75,12 +75,18 @@ function keepInForm(
   if (event.key === "Enter") event.preventDefault()
 }
 
+function blankChoice() {
+  return { id: crypto.randomUUID(), label: "" }
+}
+
 export function QuestionBuilder({
   initial,
   locked,
+  pickedChoices,
 }: {
   initial: RegistrationQuestion[]
   locked: boolean
+  pickedChoices: string[]
 }) {
   const [drafts, setDrafts] = useState<Draft[]>(() => initial.map(toDraft))
   const frozen = new Set(locked ? initial.map((q) => q.id) : [])
@@ -98,7 +104,7 @@ export function QuestionBuilder({
         type,
         label: "",
         required: true,
-        options: type === "choice" ? ["", ""] : [],
+        options: type === "choice" ? [blankChoice(), blankChoice()] : [],
         minWords: "0",
         maxWords: String(DEFAULT_MAX_WORDS),
       },
@@ -116,9 +122,9 @@ export function QuestionBuilder({
       />
       {frozen.size > 0 && (
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Students have already answered. You can reword questions and change
-          their choices, but not remove a question they answered. Answers
-          already given keep the choice each student picked.
+          Students have already answered. You can reword questions and choices,
+          and every answer shows the new wording. A question or a choice that
+          someone picked cannot be removed.
         </p>
       )}
       {drafts.length === 0 && (
@@ -179,14 +185,16 @@ export function QuestionBuilder({
               <FieldLabel>Choices</FieldLabel>
               <div className="flex flex-col gap-2">
                 {d.options.map((option, at) => (
-                  <div key={at} className="flex items-center gap-2">
+                  <div key={option.id} className="flex items-center gap-2">
                     <Input
-                      autoFocus={fresh === `${d.id}:${at}`}
-                      value={option}
+                      autoFocus={fresh === option.id}
+                      value={option.label}
                       onChange={(e) =>
                         patch(d.id, {
-                          options: d.options.map((o, i) =>
-                            i === at ? e.target.value : o
+                          options: d.options.map((o) =>
+                            o.id === option.id
+                              ? { ...o, label: e.target.value }
+                              : o
                           ),
                         })
                       }
@@ -200,11 +208,14 @@ export function QuestionBuilder({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      disabled={d.options.length <= 2}
+                      disabled={
+                        d.options.length <= 2 ||
+                        pickedChoices.includes(option.id)
+                      }
                       aria-label={`Remove choice ${at + 1} of question ${index + 1}`}
                       onClick={() =>
                         patch(d.id, {
-                          options: d.options.filter((_, i) => i !== at),
+                          options: d.options.filter((o) => o.id !== option.id),
                         })
                       }
                     >
@@ -220,8 +231,9 @@ export function QuestionBuilder({
                 className="self-start"
                 disabled={d.options.length >= MAX_OPTIONS}
                 onClick={() => {
-                  setFresh(`${d.id}:${d.options.length}`)
-                  patch(d.id, { options: [...d.options, ""] })
+                  const choice = blankChoice()
+                  setFresh(choice.id)
+                  patch(d.id, { options: [...d.options, choice] })
                 }}
               >
                 <PlusIcon data-icon="inline-start" />

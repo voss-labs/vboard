@@ -13,7 +13,7 @@ import {
 } from "@/db/queries/posts"
 import {
   decideRegistrations,
-  hasRegistrations,
+  listRegistrations,
 } from "@/db/queries/registrations"
 import { firstIssue, postFormSchema } from "@/db/validations"
 import { done, fail, type ActionResult } from "@/lib/action-result"
@@ -109,15 +109,19 @@ export async function updatePostAction(
     withDb({ userId: access.user.id }, async (ctx) => {
       const post = await postInCommunity(ctx, access, formData.get("postId"))
       if (!post) return fail("Post not found.")
+      const answers = post.isEvent
+        ? (await listRegistrations(ctx, post.id)).map((row) => row.answers)
+        : []
       if (
+        answers.length > 0 &&
         !keepsAnsweredQuestions(
           post.registrationQuestions,
-          data.registrationQuestions
-        ) &&
-        (await hasRegistrations(ctx, post.id))
+          data.registrationQuestions,
+          answers
+        )
       )
         return fail(
-          "Students have already answered this form. You can reword questions and change their choices, but not remove a question or change its type."
+          "Students have already answered this form. You can reword questions and choices, but not remove a question, change its type or remove a choice someone picked."
         )
       await updatePost(ctx, access.community.id, post.id, data)
       postSlug = post.slug

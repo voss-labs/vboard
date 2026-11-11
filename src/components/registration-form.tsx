@@ -116,19 +116,19 @@ function ChoiceField({ question }: { question: ChoiceQuestion }) {
       <div ref={options} className="grid gap-2">
         {question.options.map((option) => (
           <label
-            key={option}
+            key={option.id}
             className="hover:bg-accent has-checked:border-ring has-checked:bg-accent has-focus-visible:ring-ring/50 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors has-focus-visible:ring-3"
           >
             <input
               type="radio"
               name={`answer.${question.id}`}
-              value={option}
-              aria-label={option}
+              value={option.id}
+              aria-label={option.label}
               required={question.required}
               onChange={() => setPicked(true)}
               className="accent-primary size-4 shrink-0 outline-none"
             />
-            <span className="min-w-0 wrap-anywhere">{option}</span>
+            <span className="min-w-0 wrap-anywhere">{option.label}</span>
           </label>
         ))}
       </div>

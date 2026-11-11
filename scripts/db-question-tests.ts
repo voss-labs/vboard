@@ -10,13 +10,13 @@ import {
   decideRegistrations,
   getEventQuestions,
   getRegistration,
-  hasRegistrations,
   listRegistrations,
   registerForEvent,
 } from "@/db/queries/registrations"
-import type {
-  RegistrationAnswers,
-  RegistrationQuestion,
+import {
+  answerLabels,
+  type RegistrationAnswers,
+  type RegistrationQuestion,
 } from "@/lib/registration-form"
 import { adminFixture } from "./db-security-tests"
 import { IDS } from "./db-test-fixtures"
@@ -25,6 +25,14 @@ const ROLE = "40000000-0000-4000-8000-000000000001"
 const ABOUT = "40000000-0000-4000-8000-000000000002"
 const YEAR = "40000000-0000-4000-8000-000000000003"
 const UNKNOWN = "40000000-0000-4000-8000-000000000099"
+const FRONTEND = {
+  id: "40000000-0000-4000-8000-00000000000a",
+  label: "Frontend",
+}
+const BACKEND = { id: "40000000-0000-4000-8000-00000000000b", label: "Backend" }
+const DESIGN = { id: "40000000-0000-4000-8000-00000000000c", label: "Design" }
+const SE = { id: "40000000-0000-4000-8000-00000000000d", label: "SE" }
+const TE = { id: "40000000-0000-4000-8000-00000000000e", label: "TE" }
 
 export async function testRegistrationQuestions(owner: Pool, app: Pool) {
   const db = drizzle(app, { schema })
@@ -45,7 +53,7 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
     type: "choice",
     label: "Role",
     required: true,
-    options: ["Frontend", "Backend"],
+    options: [FRONTEND, BACKEND],
   }
   const about: RegistrationQuestion = {
     id: ABOUT,
@@ -110,8 +118,12 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
   for (const malformed of [
     { id: ROLE },
     ["Role"],
-    [{ ...role, options: ["Frontend"] }],
-    [{ ...role, options: ["Frontend", "Frontend"] }],
+    [{ ...role, options: [FRONTEND] }],
+    [{ ...role, options: ["Frontend", "Backend"] }],
+    [{ ...role, options: [FRONTEND, { ...BACKEND, label: "Frontend" }] }],
+    [{ ...role, options: [FRONTEND, { ...BACKEND, id: FRONTEND.id }] }],
+    [{ ...role, options: [FRONTEND, { ...BACKEND, id: "backend" }] }],
+    [{ ...role, options: [FRONTEND, { ...BACKEND, label: " " }] }],
     [role, { ...about, id: ROLE }],
     [{ id: ABOUT, type: "text", label: "About you", required: false }],
     [{ ...about, minWords: 6, maxWords: 5 }],
@@ -139,20 +151,21 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
     await asActor("student", (ctx) => getEventQuestions(ctx, event)),
     questions
   )
-  assert.equal(
-    await asActor("organizer", (ctx) => hasRegistrations(ctx, event)),
-    false
+  assert.deepEqual(
+    await asActor("organizer", (ctx) => listRegistrations(ctx, event)),
+    []
   )
 
   const invalidAnswers: RegistrationAnswers[] = [
     {},
     { [ABOUT]: "one two three" },
-    { [ROLE]: "Design" },
-    { [ROLE]: "Frontend", [ABOUT]: "one two" },
-    { [ROLE]: "Frontend", [ABOUT]: "one two three four five six" },
-    { [ROLE]: "Frontend", [ABOUT]: "" },
-    { [ROLE]: "Frontend", [ABOUT]: " one two three " },
-    { [ROLE]: "Frontend", [UNKNOWN]: "extra" },
+    { [ROLE]: DESIGN.id },
+    { [ROLE]: "Frontend" },
+    { [ROLE]: FRONTEND.id, [ABOUT]: "one two" },
+    { [ROLE]: FRONTEND.id, [ABOUT]: "one two three four five six" },
+    { [ROLE]: FRONTEND.id, [ABOUT]: "" },
+    { [ROLE]: FRONTEND.id, [ABOUT]: " one two three " },
+    { [ROLE]: FRONTEND.id, [UNKNOWN]: "extra" },
   ]
   for (const invalid of invalidAnswers)
     await assert.rejects(
@@ -168,19 +181,14 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
     0
   )
 
-  const answers = { [ROLE]: "Frontend", [ABOUT]: "I build web apps" }
+  const answers = { [ROLE]: FRONTEND.id, [ABOUT]: "I build web apps" }
   const first = await asActor("student", (ctx) =>
     registerForEvent(ctx, event, answers)
   )
   assert.equal(first.status, "pending")
   assert.deepEqual(first.answers, answers)
   assert.deepEqual(await row(first.id), { status: "pending", answers })
-  assert.equal(
-    await asActor("organizer", (ctx) => hasRegistrations(ctx, event)),
-    true
-  )
-
-  const changed = JSON.stringify({ [ROLE]: "Backend" })
+  const changed = JSON.stringify({ [ROLE]: BACKEND.id })
   for (const actor of ["student", "organizer", "super"])
     await assert.rejects(
       asActor(actor, (ctx) =>
@@ -228,9 +236,12 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
       { ...about, id: ABOUT },
     ])
   )
+  await assert.rejects(
+    save("organizer", [{ ...role, options: [BACKEND, DESIGN] }, about])
+  )
   assert.deepEqual(await stored(event), questions)
   const reworded: RegistrationQuestion[] = [
-    { ...role, options: ["Web", "Design"] },
+    { ...role, options: [{ ...FRONTEND, label: "Web" }, DESIGN] },
     about,
   ]
   assert.deepEqual(await save("organizer", reworded), [{ questions: reworded }])
@@ -241,9 +252,13 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
       .answers,
     answers
   )
+  assert.equal(
+    answerLabels(reworded, (await row(first.id)).answers)[ROLE],
+    "Web"
+  )
   await assert.rejects(
     asActor("student2", (ctx) =>
-      registerForEvent(ctx, event, { [ROLE]: "Frontend" })
+      registerForEvent(ctx, event, { [ROLE]: BACKEND.id })
     )
   )
   await asActor("organizer", (ctx) =>
@@ -258,7 +273,7 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
     {
       ...role,
       label: "Preferred role",
-      options: ["Frontend", "Backend", "Design"],
+      options: [FRONTEND, BACKEND, DESIGN],
     },
     { ...about, label: "A little about you" },
     {
@@ -266,7 +281,7 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
       type: "choice",
       label: "Year",
       required: false,
-      options: ["SE", "TE"],
+      options: [SE, TE],
     },
   ]
   assert.deepEqual(await save("organizer", widened), [{ questions: widened }])
@@ -285,11 +300,11 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
   assert.deepEqual(await row(first.id), { status: "cancelled", answers })
   await assert.rejects(
     asActor("student", (ctx) =>
-      registerForEvent(ctx, event, { [ROLE]: "Marketing" })
+      registerForEvent(ctx, event, { [ROLE]: UNKNOWN })
     )
   )
   assert.deepEqual(await row(first.id), { status: "cancelled", answers })
-  const retried = { [ROLE]: "Design", [YEAR]: "TE" }
+  const retried = { [ROLE]: DESIGN.id, [YEAR]: TE.id }
   const again = await asActor("student", (ctx) =>
     registerForEvent(ctx, event, retried)
   )

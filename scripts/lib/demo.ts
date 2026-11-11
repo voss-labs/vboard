@@ -35,7 +35,10 @@ const INTERVIEW_QUESTIONS: RegistrationQuestion[] = [
       "Music and percussion",
       "Direction",
       "Backstage and props",
-    ],
+    ].map((label, i) => ({
+      id: `5f0c1a52-3b7e-4c7a-9d1e-00000000000${i}`,
+      label,
+    })),
   },
   {
     id: "8a2d4e61-9c3f-4b5a-a7d2-1e0f3c5b7d22",
@@ -66,7 +69,7 @@ export function demoAnswers(
   const answers: RegistrationAnswers = {}
   for (const q of questions) {
     if (q.type === "choice") {
-      answers[q.id] = q.options[i % q.options.length]
+      answers[q.id] = q.options[i % q.options.length].id
       continue
     }
     let text = ""

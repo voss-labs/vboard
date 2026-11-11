@@ -3,6 +3,7 @@ import { withDb } from "@/db"
 import { NextResponse } from "next/server"
 import { getPostById } from "@/db/queries/posts"
 import { listRegistrations } from "@/db/queries/registrations"
+import { answerLabels } from "@/lib/registration-form"
 import { toCsv } from "@/lib/csv"
 import { slugify } from "@/lib/slug"
 import { getCommunityAccess, getSessionUser } from "@/lib/session"
@@ -40,16 +41,19 @@ export async function GET(
       "Checked in at",
       ...post.registrationQuestions.map((q) => q.label),
     ],
-    rows.map((r) => [
-      r.name,
-      r.email,
-      r.rollNumber,
-      r.department,
-      r.status,
-      r.registeredAt,
-      r.checkedInAt,
-      ...post.registrationQuestions.map((q) => r.answers[q.id] ?? ""),
-    ])
+    rows.map((r) => {
+      const answers = answerLabels(post.registrationQuestions, r.answers)
+      return [
+        r.name,
+        r.email,
+        r.rollNumber,
+        r.department,
+        r.status,
+        r.registeredAt,
+        r.checkedInAt,
+        ...post.registrationQuestions.map((q) => answers[q.id] ?? ""),
+      ]
+    })
   )
   return new NextResponse(csv, {
     headers: {

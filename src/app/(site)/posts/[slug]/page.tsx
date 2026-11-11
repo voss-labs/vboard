@@ -26,9 +26,10 @@ import {
   registrationAvailability,
   seatsLeft,
 } from "@/lib/registration"
-import type {
-  RegistrationAnswers,
-  RegistrationQuestion,
+import {
+  answerLabels,
+  type RegistrationAnswers,
+  type RegistrationQuestion,
 } from "@/lib/registration-form"
 import { communityCan } from "@/lib/rbac"
 import { getSessionUser, roleIn } from "@/lib/session"
@@ -68,7 +69,7 @@ export default async function PostPage({ params }: Props) {
     !!user && questions.length > 0 && canRegisterNow(status, availability)
   const answers =
     registration && registration.status !== "cancelled"
-      ? registration.answers
+      ? answerLabels(questions, registration.answers)
       : null
 
   return (
