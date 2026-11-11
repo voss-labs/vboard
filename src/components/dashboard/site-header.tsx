@@ -47,7 +47,7 @@ export function SiteHeader({ names }: { names: Record<string, string> }) {
     return label ? [{ href: `/${parts.slice(0, i + 1).join("/")}`, label }] : []
   })
   return (
-    <header className="bg-background/95 flex h-(--header-height) shrink-0 items-center border-b">
+    <header className="bg-background/95 flex h-(--header-height) shrink-0 items-center border-b md:rounded-t-xl">
       <div className="flex w-full min-w-0 items-center gap-2 px-4 md:px-6">
         <SidebarTrigger className="-ml-1 min-h-11 min-w-11" />
         <Separator

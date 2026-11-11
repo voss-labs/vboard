@@ -36,7 +36,7 @@ export function StatCard({
 }) {
   return (
     <div className="bg-card text-card-foreground rounded-xl border p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
         <p className="text-muted-foreground text-xs font-medium">{label}</p>
         {badge}
       </div>

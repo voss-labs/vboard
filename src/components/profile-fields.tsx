@@ -56,6 +56,7 @@ export function ProfileFields({
 }) {
   const [rollNumber, setRollNumber] = useState(initialRollNumber ?? "")
   const [touched, setTouched] = useState(Boolean(initialRollNumber))
+  const [bio, setBio] = useState(initialBio ?? "")
   const [picked, setPicked] = useState<string | null>(
     initialYear ? String(initialYear) : null
   )
@@ -71,99 +72,105 @@ export function ProfileFields({
 
   return (
     <FieldGroup>
+      <div className="grid gap-5 @md/field-group:grid-cols-2">
+        <Field>
+          <FieldLabel htmlFor="rollNumber">Roll number</FieldLabel>
+          <Input
+            id="rollNumber"
+            name="rollNumber"
+            value={rollNumber}
+            onChange={(event) =>
+              setRollNumber(event.target.value.toUpperCase())
+            }
+            onBlur={() => setTouched(true)}
+            placeholder="23108A0054"
+            maxLength={30}
+            required={required}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck={false}
+            className="tabular-nums"
+            aria-invalid={showError}
+            aria-describedby="roll-help"
+          />
+          {showError ? (
+            <p id="roll-help" role="alert" className="text-destructive text-sm">
+              {error}
+            </p>
+          ) : parsed?.department ? (
+            <p
+              id="roll-help"
+              aria-live="polite"
+              className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm"
+            >
+              <CheckCircle2
+                className="text-success size-4 shrink-0"
+                aria-hidden
+              />
+              <span className="font-medium">
+                {DEPARTMENT_LABELS[parsed.department]} · Division{" "}
+                {parsed.division}
+              </span>
+              {parsed.isDSY && (
+                <span className="text-muted-foreground">
+                  · direct second-year admission
+                </span>
+              )}
+            </p>
+          ) : (
+            <FieldDescription id="roll-help">
+              The 10-character number on your VIT ID card.
+            </FieldDescription>
+          )}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="year">Year</FieldLabel>
+          <FormSelect
+            key={year}
+            id="year"
+            name="year"
+            label="Year"
+            defaultValue={year}
+            disabled={!parsed}
+            onValueChange={setPicked}
+            items={[
+              { value: UNSET, label: "Select your year" },
+              ...STUDY_YEARS.map((option) => ({
+                value: String(option),
+                label: STUDY_YEAR_LABELS[option],
+              })),
+            ]}
+          />
+          <FieldDescription>
+            {!parsed
+              ? "Enter your roll number first."
+              : derivedYear && year === String(derivedYear)
+                ? "Filled from your roll number. Moves up each June."
+                : "Moves up each June."}
+          </FieldDescription>
+        </Field>
+      </div>
       <Field>
-        <FieldLabel htmlFor="rollNumber">Roll number</FieldLabel>
-        <Input
-          id="rollNumber"
-          name="rollNumber"
-          value={rollNumber}
-          onChange={(event) => setRollNumber(event.target.value.toUpperCase())}
-          onBlur={() => setTouched(true)}
-          placeholder="23108A0054"
-          maxLength={30}
-          required={required}
-          autoCapitalize="characters"
-          autoCorrect="off"
-          autoComplete="off"
-          spellCheck={false}
-          aria-invalid={showError}
-          aria-describedby={showError ? "roll-help roll-error" : "roll-help"}
-        />
-        <FieldDescription id="roll-help">
-          The 10-character number on your VIT ID card. It fills in your
-          department and division.
-        </FieldDescription>
-        {showError && (
-          <p id="roll-error" role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        )}
-      </Field>
-      {parsed?.department && (
-        <dl
-          aria-live="polite"
-          className="bg-muted/50 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg border px-3 py-3 text-sm"
-        >
-          <div className="text-muted-foreground col-span-full flex items-center gap-1.5 text-xs">
-            <CheckCircle2 className="text-success size-3.5" aria-hidden />
-            From your roll number
-            {parsed.isDSY && " · direct second-year admission"}
-          </div>
-          <div>
-            <dt className="text-muted-foreground text-xs">Department</dt>
-            <dd className="font-medium">
-              {DEPARTMENT_LABELS[parsed.department]}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground text-xs">Division</dt>
-            <dd className="font-medium">{parsed.division}</dd>
-          </div>
-        </dl>
-      )}
-      <Field>
-        <FieldLabel htmlFor="year">Year</FieldLabel>
-        <FormSelect
-          key={year}
-          id="year"
-          name="year"
-          label="Year"
-          defaultValue={year}
-          disabled={!parsed}
-          onValueChange={setPicked}
-          items={[
-            { value: UNSET, label: "Select your year" },
-            ...STUDY_YEARS.map((option) => ({
-              value: String(option),
-              label: STUDY_YEAR_LABELS[option],
-            })),
-          ]}
-        />
-        <FieldDescription>
-          {!parsed
-            ? "Enter your roll number first."
-            : derivedYear && year === String(derivedYear)
-              ? "Filled from your roll number. Change it if it is wrong; it moves up each June."
-              : "It moves up by itself each June."}
-        </FieldDescription>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="bio">
-          Bio
-          <span className="text-muted-foreground text-xs font-normal">
-            Optional
+        <div className="flex items-baseline justify-between gap-3">
+          <FieldLabel htmlFor="bio">
+            Bio
+            <span className="text-muted-foreground text-xs font-normal">
+              Optional
+            </span>
+          </FieldLabel>
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {bio.length}/400
           </span>
-        </FieldLabel>
+        </div>
         <Textarea
           id="bio"
           name="bio"
-          defaultValue={initialBio ?? ""}
+          value={bio}
+          onChange={(event) => setBio(event.target.value)}
           placeholder="A line about you: what you build, what you want to try"
           maxLength={400}
         />
-        <FieldDescription>
-          Organizers see it next to your registration.
-        </FieldDescription>
       </Field>
       {footer(valid)}
     </FieldGroup>

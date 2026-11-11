@@ -1,7 +1,6 @@
 "use client"
 
 import { ActionForm } from "@/components/action-form"
-import { FormFooter } from "@/components/dashboard/ui"
 import { ProfileFields } from "@/components/profile-fields"
 import { SubmitButton } from "@/components/submit-button"
 import type { StudyYear } from "@/lib/roll-number"
@@ -27,11 +26,11 @@ export function ProfileForm({
         academicDate={academicDate}
         required={false}
         footer={(valid) => (
-          <FormFooter description="Shared with event organizers when you register.">
+          <div className="flex justify-end border-t pt-4">
             <SubmitButton pendingLabel="Saving…" disabled={!valid}>
               Save profile
             </SubmitButton>
-          </FormFooter>
+          </div>
         )}
       />
     </ActionForm>
