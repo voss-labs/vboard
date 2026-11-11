@@ -124,10 +124,7 @@ export function keepsAnsweredQuestions(
   previous: RegistrationQuestion[],
   next: RegistrationQuestion[]
 ): boolean {
-  return previous.every((old) => {
-    const kept = next.find((q) => q.id === old.id)
-    if (!kept || kept.type !== old.type) return false
-    if (old.type !== "choice" || kept.type !== "choice") return true
-    return old.options.every((option) => kept.options.includes(option))
-  })
+  return previous.every((old) =>
+    next.some((q) => q.id === old.id && q.type === old.type)
+  )
 }

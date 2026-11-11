@@ -93,14 +93,16 @@ describe("registration question edits", () => {
     expect(mocks.updatePost).not.toHaveBeenCalled()
     expect(mocks.revalidate).not.toHaveBeenCalled()
   })
-  it("refuses to drop an answered choice", async () => {
+  it("saves a reworded or removed choice after students have answered", async () => {
     mocks.hasRegistrations.mockResolvedValue(true)
-    const result = await updatePostAction(
-      null,
-      editForm([{ ...question, options: ["Frontend", "Design"] }])
+    const next = [{ ...question, options: ["Frontend", "Design"] }]
+    await updatePostAction(null, editForm(next))
+    expect(mocks.updatePost).toHaveBeenCalledWith(
+      ctx,
+      "community-a",
+      postId,
+      expect.objectContaining({ registrationQuestions: next })
     )
-    expect(result.ok).toBe(false)
-    expect(mocks.updatePost).not.toHaveBeenCalled()
   })
   it("saves added choices and questions after students have answered", async () => {
     mocks.hasRegistrations.mockResolvedValue(true)

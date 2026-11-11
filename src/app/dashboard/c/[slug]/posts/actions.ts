@@ -117,7 +117,7 @@ export async function updatePostAction(
         (await hasRegistrations(ctx, post.id))
       )
         return fail(
-          "Students have already answered this form. You can reword questions and add new questions or choices, but not remove them."
+          "Students have already answered this form. You can reword questions and change their choices, but not remove a question or change its type."
         )
       await updatePost(ctx, access.community.id, post.id, data)
       postSlug = post.slug

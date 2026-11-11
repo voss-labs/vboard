@@ -243,19 +243,19 @@ describe("keepsAnsweredQuestions", () => {
     expect(keepsAnsweredQuestions(previous, [])).toBe(false)
   })
 
-  it("rejects removing or renaming a choice", () => {
+  it("allows removing or renaming a choice", () => {
     expect(
       keepsAnsweredQuestions(previous, [
         { ...role, options: ["Frontend", "Backend"] },
         about,
       ])
-    ).toBe(false)
+    ).toBe(true)
     expect(
       keepsAnsweredQuestions(previous, [
         { ...role, options: ["Frontend", "Backend", "UI design"] },
         about,
       ])
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it("rejects changing a question's type", () => {

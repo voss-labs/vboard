@@ -223,15 +223,37 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
   await assert.rejects(save("organizer", [role]))
   await assert.rejects(save("organizer", []))
   await assert.rejects(
-    save("organizer", [{ ...role, options: ["Frontend", "Design"] }, about])
-  )
-  await assert.rejects(
     save("organizer", [
       { ...about, id: ROLE, label: "Role" },
       { ...about, id: ABOUT },
     ])
   )
   assert.deepEqual(await stored(event), questions)
+  const reworded: RegistrationQuestion[] = [
+    { ...role, options: ["Web", "Design"] },
+    about,
+  ]
+  assert.deepEqual(await save("organizer", reworded), [{ questions: reworded }])
+  assert.deepEqual(await stored(event), reworded)
+  assert.deepEqual((await row(first.id)).answers, answers)
+  assert.deepEqual(
+    (await asActor("organizer", (ctx) => listRegistrations(ctx, event)))[0]
+      .answers,
+    answers
+  )
+  await assert.rejects(
+    asActor("student2", (ctx) =>
+      registerForEvent(ctx, event, { [ROLE]: "Frontend" })
+    )
+  )
+  await asActor("organizer", (ctx) =>
+    decideRegistrations(ctx, {
+      postId: event,
+      ids: [first.id],
+      decision: "reject",
+    })
+  )
+  assert.deepEqual(await row(first.id), { status: "rejected", answers })
   const widened: RegistrationQuestion[] = [
     {
       ...role,

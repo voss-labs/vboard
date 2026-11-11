@@ -105,10 +105,10 @@ function ChoiceField({ question }: { question: ChoiceQuestion }) {
     setPicked(false)
   }
   return (
-    <FieldSet className="gap-2">
+    <FieldSet className="min-w-0 gap-2">
       <FieldLegend
         variant="label"
-        className="flex flex-wrap items-baseline gap-2 break-words"
+        className="flex flex-wrap items-baseline gap-2 wrap-anywhere"
       >
         {question.label}
         <Requirement required={question.required} />
@@ -128,7 +128,7 @@ function ChoiceField({ question }: { question: ChoiceQuestion }) {
               onChange={() => setPicked(true)}
               className="accent-primary size-4 shrink-0 outline-none"
             />
-            <span className="min-w-0 break-words">{option}</span>
+            <span className="min-w-0 wrap-anywhere">{option}</span>
           </label>
         ))}
       </div>
@@ -154,7 +154,10 @@ function TextField({ question }: { question: TextQuestion }) {
     words > 0 && (words > question.maxWords || words < question.minWords)
   return (
     <Field>
-      <FieldLabel htmlFor={id} className="flex-wrap items-baseline break-words">
+      <FieldLabel
+        htmlFor={id}
+        className="flex-wrap items-baseline wrap-anywhere"
+      >
         {question.label}
         <Requirement required={question.required} />
       </FieldLabel>

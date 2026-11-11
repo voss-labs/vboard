@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Registration questions: choices can be reworded or removed after students register; answers already given keep the choice each student picked. Fixed the question builder moving the cursor back to the last added choice while typing elsewhere.
+- Links in post text are clickable.
 - Event registration questions: Organizers add required or optional single-choice and long-text questions to an event; students answer when registering, and the hosting team reads the answers in the registrations view and the CSV export.
 - Sign in with VOSS (OIDC, PKCE) like VERP; passwords removed. Local persona switcher behind `VBOARD_DEV_AUTH`.
 - Five-layer RBAC: visitor, student, community lead / manager / volunteer, site admin, super admin. Capabilities in `src/lib/rbac.ts`, documented in `research/rbac.md`.
