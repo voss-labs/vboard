@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm"
+import { eq, inArray, sql } from "drizzle-orm"
 import type { DbContext } from "@/db"
 import { profile } from "@/db/schema"
 import { createAuditLog } from "@/db/queries/audit"
@@ -79,6 +79,17 @@ export async function listPeople(ctx: DbContext, search: string, limit = 50) {
     ctx,
     sql`select data from vboard_api.people(${search.trim()}, ${limit}) data`
   )
+}
+export async function listProfileContacts(ctx: DbContext, userIds: string[]) {
+  if (userIds.length === 0) return []
+  return ctx.tx
+    .select({
+      userId: profile.userId,
+      cohortYear: profile.cohortYear,
+      phone: profile.phone,
+    })
+    .from(profile)
+    .where(inArray(profile.userId, userIds))
 }
 export async function countUsers(ctx: DbContext) {
   const result = await ctx.tx.execute<{ data: { users: number } }>(

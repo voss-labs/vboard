@@ -22,9 +22,7 @@ import { initials } from "@/lib/identity"
 import {
   assignableCommunityRoles,
   canChangeMember,
-  COMMUNITY_ROLE_DESCRIPTION,
   COMMUNITY_ROLE_LABEL,
-  type CommunityRole,
 } from "@/lib/rbac"
 import { requireCommunityAccess } from "@/lib/session"
 import {
@@ -201,19 +199,6 @@ export default async function TeamPage({
           </RecordTable>
         )}
       </Panel>
-
-      <dl className="grid gap-x-8 gap-y-4 px-1 @2xl/main:grid-cols-2">
-        {(["lead", "organizer"] as CommunityRole[]).map((r) => (
-          <div key={r} className="grid gap-1.5">
-            <dt>
-              <RoleBadge role={r} />
-            </dt>
-            <dd className="text-muted-foreground text-sm leading-relaxed">
-              {COMMUNITY_ROLE_DESCRIPTION[r]}
-            </dd>
-          </div>
-        ))}
-      </dl>
     </div>
   )
 }
