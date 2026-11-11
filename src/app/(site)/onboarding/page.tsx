@@ -51,8 +51,8 @@ export default async function OnboardingPage({
       </Card>
       <p className="text-muted-foreground text-xs leading-relaxed break-words">
         Signed in as {user.name} ({user.email}). The team running an event you
-        register for sees your name, VIT email, roll number, department, year
-        and bio.
+        register for sees your name, VIT email, roll number, department,
+        division, year and bio.
       </p>
     </div>
   )

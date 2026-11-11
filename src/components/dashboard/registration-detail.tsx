@@ -15,17 +15,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { initials } from "@/lib/identity"
 import { canReceiveDecision } from "@/lib/registration"
 import { countWords, type RegistrationQuestion } from "@/lib/registration-form"
-
-function initialsOf(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0))
-    .join("")
-    .toUpperCase()
-}
 
 function Fact({ label, value }: { label: string; value: string | null }) {
   if (!value) return null
@@ -87,7 +79,7 @@ export function RegistrationDetail({
             <SheetHeader className="flex-row items-center gap-3 border-b pr-14">
               <Avatar className="size-10 max-sm:hidden">
                 <AvatarFallback className="text-sm font-medium">
-                  {initialsOf(shown.name)}
+                  {initials(shown.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-0.5">

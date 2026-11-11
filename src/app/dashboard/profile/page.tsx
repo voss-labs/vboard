@@ -1,11 +1,10 @@
 import Link from "next/link"
-import {
-  EmptyState,
-  PageHeader,
-  Panel,
-  RoleBadge,
-} from "@/components/dashboard/ui"
-import { academicDate, academicDay } from "@/lib/profile"
+import { CheckIcon } from "lucide-react"
+import { PageHeader, Panel, RoleBadge } from "@/components/dashboard/ui"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { initials } from "@/lib/identity"
+import { academicDate, academicDay, isProfileComplete } from "@/lib/profile"
 import { SITE_ROLE_LABEL } from "@/lib/rbac"
 import { studyYear } from "@/lib/roll-number"
 import { requireUser } from "@/lib/session"
@@ -14,18 +13,33 @@ import { ProfileForm } from "@/app/dashboard/profile/profile-form"
 export default async function ProfilePage() {
   const user = await requireUser()
   const today = academicDate()
+  const complete = isProfileComplete(user)
 
   return (
     <>
       <PageHeader
         title="Profile"
-        description="Organizers see your name, roll number, department and year when you register for an event."
+        description="The team running an event you register for sees your name, VIT email, roll number, department, division, year and bio."
       />
 
-      <div className="grid gap-6 @5xl/main:grid-cols-[1.5fr_1fr]">
+      <div className="grid items-start gap-6 @5xl/main:grid-cols-[minmax(0,1fr)_22rem]">
         <Panel
           title="Registration details"
-          description="Keep these up to date before joining an event."
+          description={
+            complete
+              ? undefined
+              : "Add your roll number and year to register for events."
+          }
+          action={
+            complete ? (
+              <Badge variant="outline">
+                <CheckIcon data-icon="inline-start" />
+                Ready to register
+              </Badge>
+            ) : (
+              <Badge variant="secondary">Incomplete</Badge>
+            )
+          }
         >
           <ProfileForm
             key={[user.rollNumber, user.cohortYear, user.bio].join("|")}
@@ -40,57 +54,53 @@ export default async function ProfilePage() {
           />
         </Panel>
 
-        <div className="flex flex-col gap-6">
-          <Panel
-            title="Account"
-            description="Name and email come from your VOSS account."
-          >
-            <dl className="grid gap-3 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Name</dt>
-                <dd className="font-medium">{user.name}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Email</dt>
-                <dd className="min-w-0 text-right font-medium break-all">
+        <Panel>
+          <div className="flex flex-col gap-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar className="size-11">
+                {user.image && <AvatarImage src={user.image} alt="" />}
+                <AvatarFallback className="font-medium">
+                  {initials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="font-medium break-words">{user.name}</p>
+                <p className="text-muted-foreground text-sm break-all">
                   {user.email}
-                </dd>
+                </p>
               </div>
-              <div className="flex justify-between gap-4">
+            </div>
+            <dl className="grid gap-3 border-t pt-5 text-sm">
+              <div className="flex items-center justify-between gap-4">
                 <dt className="text-muted-foreground">Site role</dt>
                 <dd className="font-medium">
                   {SITE_ROLE_LABEL[user.siteRole]}
                 </dd>
               </div>
-            </dl>
-          </Panel>
-          <Panel title="Teams">
-            {user.memberships.length === 0 ? (
-              <EmptyState
-                title="No team memberships"
-                body="Your community roles will appear here."
-                className="border-0 px-0 py-3"
-              />
-            ) : (
-              <ul className="grid gap-3">
-                {user.memberships.map((m) => (
-                  <li
-                    key={m.communityId}
-                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                  >
+              {user.memberships.map((m) => (
+                <div
+                  key={m.communityId}
+                  className="flex flex-wrap items-center justify-between gap-2"
+                >
+                  <dt className="min-w-0">
                     <Link
                       href={`/dashboard/c/${m.slug}`}
-                      className="font-medium hover:underline"
+                      className="font-medium break-words hover:underline"
                     >
                       {m.name}
                     </Link>
+                  </dt>
+                  <dd>
                     <RoleBadge role={m.role} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-        </div>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="text-muted-foreground border-t pt-4 text-xs leading-relaxed">
+              Name and email come from your VOSS account.
+            </p>
+          </div>
+        </Panel>
       </div>
     </>
   )
