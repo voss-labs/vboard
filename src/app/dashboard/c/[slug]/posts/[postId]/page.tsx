@@ -56,50 +56,49 @@ export default async function ManagePostPage({
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <WorkspaceRouteTitle id={post.id} title={post.title} />
-      <div className="flex flex-col gap-4 @2xl/main:flex-row @2xl/main:items-start @2xl/main:justify-between">
-        <div className="space-y-2">
-          <Link
-            href={`/dashboard/c/${slug}`}
-            className={buttonVariants({
-              variant: "ghost",
-              size: "sm",
-              className: "-ml-2",
-            })}
-          >
-            <ArrowLeftIcon data-icon="inline-start" />
-            All posts
-          </Link>
-          <h2 className="text-2xl font-semibold tracking-tight break-words">
-            {post.title}
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={post.status} />
-            <Badge variant="outline">
-              {post.isEvent ? "Event" : "Announcement"}
-            </Badge>
-            {post.visibility === "vit_only" && (
-              <Badge variant="outline">VIT only</Badge>
-            )}
-            {post.isPinned && <Badge variant="secondary">Pinned</Badge>}
-            {range && (
-              <span className="text-muted-foreground text-sm">
-                {range.date} · {range.time}
-              </span>
-            )}
+      <div className="flex flex-col gap-3">
+        <Link
+          href={`/dashboard/c/${slug}`}
+          className={buttonVariants({
+            variant: "ghost",
+            size: "sm",
+            className: "text-muted-foreground -ml-2 self-start",
+          })}
+        >
+          <ArrowLeftIcon data-icon="inline-start" />
+          {access.community.name}
+        </Link>
+        <div className="flex flex-col gap-3 @2xl/main:flex-row @2xl/main:items-start @2xl/main:justify-between">
+          <div className="min-w-0 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold tracking-tight break-words">
+                {post.title}
+              </h1>
+              <StatusBadge status={post.status} />
+            </div>
+            <p className="text-muted-foreground text-sm">
+              {[
+                post.isEvent ? "Event" : "Announcement",
+                range && `${range.date} · ${range.time}`,
+                post.visibility === "vit_only" && "VIT only",
+                post.isPinned && "Pinned",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </div>
+          <PostActions
+            slug={slug}
+            postId={post.id}
+            postSlug={post.slug}
+            status={post.status}
+            isEvent={post.isEvent}
+            isPinned={post.isPinned}
+            canWrite={access.can("post:write")}
+            canPublish={access.can("post:publish")}
+            canDelete={access.can("post:delete")}
+          />
         </div>
-
-        <PostActions
-          slug={slug}
-          postId={post.id}
-          postSlug={post.slug}
-          status={post.status}
-          isEvent={post.isEvent}
-          isPinned={post.isPinned}
-          canWrite={access.can("post:write")}
-          canPublish={access.can("post:publish")}
-          canDelete={access.can("post:delete")}
-        />
       </div>
 
       {post.isEvent ? (
