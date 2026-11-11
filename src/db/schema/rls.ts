@@ -14,6 +14,11 @@ const predicates = {
     insert: "vboard_api.is_super_admin()",
     update: "vboard_api.leads(id)",
   },
+  community_request: {
+    select: "requester_id=vboard_api.actor_id() OR vboard_api.is_super_admin()",
+    insert: "requester_id=vboard_api.actor_id()",
+    update: "requester_id=vboard_api.actor_id() OR vboard_api.is_super_admin()",
+  },
   member: {
     select: "user_id=vboard_api.actor_id() OR vboard_api.leads(community_id)",
     insert: "vboard_api.leads(community_id)",

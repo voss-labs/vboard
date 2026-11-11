@@ -182,6 +182,17 @@ export const newCommunitySchema = createInsertSchema(community)
   })
   .strict()
 
+export const communityRequestSchema = newCommunitySchema
+  .omit({ leadEmail: true })
+  .extend({
+    purpose: z
+      .string()
+      .trim()
+      .min(20, "Say a little more about what the community will do")
+      .max(600),
+  })
+  .strict()
+
 export const memberFormSchema = createInsertSchema(communityMember)
   .pick({ role: true })
   .extend({

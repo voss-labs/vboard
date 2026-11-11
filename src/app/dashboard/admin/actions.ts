@@ -8,6 +8,7 @@ import {
   getCommunityBySlug,
   setCommunityActive,
 } from "@/db/queries/communities"
+import { decideCommunityRequest } from "@/db/queries/community-requests"
 import { getUserByEmail } from "@/db/queries/profiles"
 import { firstIssue, newCommunitySchema } from "@/db/validations"
 import { done, fail, type ActionResult } from "@/lib/action-result"
@@ -84,6 +85,46 @@ export async function setCommunityActiveAction(
     revalidatePath("/dashboard", "layout")
     revalidatePath("/communities")
     revalidatePath("/")
+  }
+  return result
+}
+export async function decideCommunityRequestAction(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const user = await getSessionUser()
+  if (!user || !siteCan(user.siteRole, "community:create"))
+    return fail("Only Super admin can review community requests.")
+  const input = z
+    .object({
+      requestId: z.uuid(),
+      decision: z.enum(["approve", "reject"]),
+      note: z
+        .string()
+        .trim()
+        .max(400)
+        .transform((value) => value || null),
+    })
+    .strict()
+    .safeParse({
+      requestId: formData.get("requestId"),
+      decision: formData.get("decision"),
+      note: formData.get("note") ?? "",
+    })
+  if (!input.success) return fail("Unknown request decision.")
+  const result = await attemptAction(() =>
+    withDb({ userId: user.id }, async (ctx) => {
+      const created = await decideCommunityRequest(ctx, {
+        id: input.data.requestId,
+        decision: input.data.decision,
+        note: input.data.note,
+      })
+      return done(created ? `${created.name} is live.` : "Request rejected.")
+    })
+  )
+  if (result.ok) {
+    revalidatePath("/dashboard", "layout")
+    revalidatePath("/communities")
   }
   return result
 }

@@ -44,17 +44,22 @@ export default async function DashboardLayout({
       ],
     },
   ]
-  if (user.memberships.length > 0) {
-    sections.push({
-      label: "Your communities",
-      items: user.memberships.map((m) => ({
+  sections.push({
+    label: "Your communities",
+    items: [
+      ...user.memberships.map((m) => ({
         title: m.name,
         url: `/dashboard/c/${m.slug}`,
         badge: COMMUNITY_ROLE_LABEL[m.role],
         initial: m.name.charAt(0),
       })),
-    })
-  }
+      {
+        title: "Start a community",
+        url: "/dashboard/start-community",
+        icon: "start" as const,
+      },
+    ],
+  })
   if (isAdmin) {
     sections.push({
       label: "Platform",

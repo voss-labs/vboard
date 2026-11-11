@@ -7,10 +7,10 @@ export async function verifyDatabase(app: Pool) {
   await verifyPrincipal(app)
   const result = await app.query<{ valid: boolean }>(`
     SELECT NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-      WHERE n.nspname='public' AND c.relname IN ('profile','community','community_member','post','registration','audit_log')
+      WHERE n.nspname='public' AND c.relname IN ('profile','community','community_member','community_request','post','registration','audit_log')
       AND (NOT c.relrowsecurity OR NOT c.relforcerowsecurity)) AND
-      (SELECT count(*)=6 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-        WHERE n.nspname='public' AND c.relname IN ('profile','community','community_member','post','registration','audit_log')) AND
+      (SELECT count(*)=7 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname='public' AND c.relname IN ('profile','community','community_member','community_request','post','registration','audit_log')) AND
       NOT EXISTS (SELECT 1 FROM unnest(ARRAY['user','session','account','verification']) t(name)
         CROSS JOIN unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE']) p(privilege)
         WHERE NOT has_table_privilege(current_user,format('public.%I',t.name),p.privilege)) AND

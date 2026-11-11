@@ -30,19 +30,19 @@ The alternative was a sidebar around every screen, including discovery. Boss sel
 
 ## Screen treatment
 
-| Surface | Redesign outcome |
-| --- | --- |
-| Discover | Compact introduction followed by the real mixed feed; recognizable event metadata and shared Card composition. |
-| Calendar | Calendar and selected-day list in matching surfaces; stacked mobile layout; server-safe display data. |
-| Communities | Readable directory and community identity, with a consistent post feed and existing management entry. |
-| Post/event detail | Clear title, host, date, capacity and visibility; readable body; prominent registration status and next action. |
-| Sign-in | Focused VOSS-only composition, safe return path, errors and guarded dev personas. |
-| Workspace overview | Compact role-relevant counts and existing actionable work; avoid unbounded attention lists dominating the screen. |
-| Registrations/events | Aligned toolbars, status vocabulary, visible results and useful mobile record layouts. |
-| Authoring | Content, event details and registration settings grouped with Field primitives; consistent action placement and pending feedback. |
-| Community team/settings/profile | Consistent form sections, permissions-aware actions and readable mobile layouts. |
-| Admin communities/people/audit | Shared identity, table, toolbar, badge and empty-state patterns. |
-| Failure/empty/loading | Same shell and typography, clear recovery/next step, accessible pending and error messages. |
+| Surface                         | Redesign outcome                                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Discover                        | Compact introduction followed by the real mixed feed; recognizable event metadata and shared Card composition.                    |
+| Calendar                        | Calendar and selected-day list in matching surfaces; stacked mobile layout; server-safe display data.                             |
+| Communities                     | Readable directory and community identity, with a consistent post feed and existing management entry.                             |
+| Post/event detail               | Clear title, host, date, capacity and visibility; readable body; prominent registration status and next action.                   |
+| Sign-in                         | Focused VOSS-only composition, safe return path, errors and guarded dev personas.                                                 |
+| Workspace overview              | Compact role-relevant counts and existing actionable work; avoid unbounded attention lists dominating the screen.                 |
+| Registrations/events            | Aligned toolbars, status vocabulary, visible results and useful mobile record layouts.                                            |
+| Authoring                       | Content, event details and registration settings grouped with Field primitives; consistent action placement and pending feedback. |
+| Community team/settings/profile | Consistent form sections, permissions-aware actions and readable mobile layouts.                                                  |
+| Admin communities/people/audit  | Shared identity, table, toolbar, badge and empty-state patterns.                                                                  |
+| Failure/empty/loading           | Same shell and typography, clear recovery/next step, accessible pending and error messages.                                       |
 
 ## Boundaries and verification
 

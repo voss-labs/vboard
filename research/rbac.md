@@ -21,3 +21,5 @@ Registration answers follow the registration row. The student reads their own; c
 Event registration counts approved/attended seats. Registration, approval and capacity changes use the same event transaction lock. Bulk decisions reject the whole batch if any submitted row is missing, belongs to another event, or cannot make that transition. Students may retry only cancelled registrations; rejected requests cannot be retried.
 
 Former site authority, additional committee roles and permission extensions are retired from runtime and privately archived by migrations. Historical audit details remain unchanged. Deferred ideas belong in `research/future.md` and confer no current authority.
+
+Community requests follow the requester. A signed-in student sends one request at a time and reads or withdraws only their own; Super admin reads every pending request with the requester's name and email and approves or rejects it. Approval creates the community and appoints the requester as Lead in the same transaction. The request's details cannot change after submission, and a closed request cannot be reopened.
