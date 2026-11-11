@@ -101,7 +101,11 @@ export default async function DashboardLayout({
                 : SITE_ROLE_LABEL[presentationRole],
           }}
         />
-        <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
+        <SidebarInset
+          id="main-content"
+          tabIndex={-1}
+          className="min-w-0 dark:md:border"
+        >
           <SiteHeader names={names} />
           <div className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 text-sm md:p-6">
             {children}
