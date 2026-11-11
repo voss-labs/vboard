@@ -30,11 +30,6 @@ export const COMMUNITY_ROLE_LABEL: Record<CommunityRole, string> = {
   lead: "Lead",
   organizer: "Organizer",
 }
-export const COMMUNITY_ROLE_DESCRIPTION: Record<CommunityRole, string> = {
-  lead: "Runs the community, manages its settings and appoints Organizers.",
-  organizer:
-    "Creates events and posts, decides registrations and manages attendance.",
-}
 const ORGANIZER: CommunityCapability[] = [
   "post:read",
   "post:write",

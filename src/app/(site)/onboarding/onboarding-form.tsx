@@ -10,12 +10,14 @@ export function OnboardingForm({
   next,
   initialRollNumber,
   initialYear,
+  initialPhone,
   initialBio,
   academicDate,
 }: {
   next: string
   initialRollNumber: string | null
   initialYear: StudyYear | null
+  initialPhone: string | null
   initialBio: string | null
   academicDate: string
 }) {
@@ -25,6 +27,7 @@ export function OnboardingForm({
       <ProfileFields
         initialRollNumber={initialRollNumber}
         initialYear={initialYear}
+        initialPhone={initialPhone}
         initialBio={initialBio}
         academicDate={academicDate}
         required

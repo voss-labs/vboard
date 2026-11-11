@@ -110,6 +110,11 @@ export function formatShortDate(date: Date): string {
   return `${p.day} ${MONTHS_SHORT[p.month]}`
 }
 
+export function formatDay(date: Date): string {
+  const p = campusParts(date)
+  return `${p.day} ${MONTHS_SHORT[p.month]} ${p.year}`
+}
+
 export function formatStamp(date: Date): string {
   const p = campusParts(date)
   return `${p.day} ${MONTHS_SHORT[p.month]}, ${time(p)}`

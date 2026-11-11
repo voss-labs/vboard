@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CheckCircle2, Clock3 } from "lucide-react"
+import { ArrowRight, CheckCircle2, Clock3 } from "lucide-react"
 import { ActionForm } from "@/components/action-form"
 import { ConfirmSubmit } from "@/components/confirm-submit"
 import { SubmitButton } from "@/components/submit-button"
@@ -87,10 +87,10 @@ export function RegistrationPanel(props: Props) {
             {props.status === "pending"
               ? "The community team will review your request. Check its status in your workspace."
               : canRegister && props.signedIn && !props.profileComplete
-                ? "Add your roll number and year once. After that, registering for any event takes one tap."
+                ? "Add your roll number, year and contact number once. After that, registering for any event takes one tap."
                 : canRegister
                   ? props.questionCount > 0
-                    ? "The community team asks a few questions with this registration."
+                    ? `The community team asks ${props.questionCount} ${props.questionCount === 1 ? "question" : "questions"} with this registration.`
                     : props.requiresApproval
                       ? "The community team reviews requests before confirming a spot."
                       : "Register with your VIT account to reserve a spot."
@@ -140,13 +140,13 @@ export function RegistrationPanel(props: Props) {
             Finish your profile to register
           </Link>
         ) : canRegister && props.questionCount > 0 ? (
-          <a
-            href="#registration-form"
+          <Link
+            href={`/posts/${props.slug}/register`}
             className={buttonVariants({ size: "lg", className: "w-full" })}
           >
-            Answer {props.questionCount}{" "}
-            {props.questionCount === 1 ? "question" : "questions"} to register
-          </a>
+            {props.requiresApproval ? "Request to join" : "Register"}
+            <ArrowRight data-icon="inline-end" aria-hidden />
+          </Link>
         ) : canRegister ? (
           <ActionForm action={registerAction}>
             <input type="hidden" name="postId" value={props.postId} />

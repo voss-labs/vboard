@@ -19,7 +19,7 @@ export default async function ProfilePage() {
     <>
       <PageHeader
         title="Profile"
-        description="The team running an event you register for sees your name, VIT email, roll number, department, division, year and bio."
+        description="The team running an event you register for sees your name, VIT email, roll number, department, division, year, contact number and bio."
       />
 
       <div className="grid items-start gap-6 @5xl/main:grid-cols-[minmax(0,1fr)_22rem]">
@@ -28,7 +28,7 @@ export default async function ProfilePage() {
           description={
             complete
               ? undefined
-              : "Add your roll number and year to register for events."
+              : "Add your roll number, year and contact number to register for events."
           }
           action={
             complete ? (
@@ -42,13 +42,16 @@ export default async function ProfilePage() {
           }
         >
           <ProfileForm
-            key={[user.rollNumber, user.cohortYear, user.bio].join("|")}
+            key={[user.rollNumber, user.cohortYear, user.phone, user.bio].join(
+              "|"
+            )}
             initialRollNumber={user.rollNumber}
             initialYear={
               user.cohortYear === null
                 ? null
                 : studyYear(user.cohortYear, academicDay(today))
             }
+            initialPhone={user.phone}
             initialBio={user.bio}
             academicDate={today}
           />

@@ -12,6 +12,7 @@ const complete = {
   rollNumber: "23102A0054",
   department: "CMPN",
   cohortYear: 2023,
+  phone: "9876543210",
 }
 
 describe("isProfileComplete", () => {
@@ -20,6 +21,8 @@ describe("isProfileComplete", () => {
     expect(isProfileComplete({ ...complete, rollNumber: null })).toBe(false)
     expect(isProfileComplete({ ...complete, department: null })).toBe(false)
     expect(isProfileComplete({ ...complete, cohortYear: null })).toBe(false)
+    expect(isProfileComplete({ ...complete, phone: null })).toBe(false)
+    expect(isProfileComplete({ ...complete, phone: "12345" })).toBe(false)
   })
 
   it("treats an older roll number that no longer parses as incomplete", () => {

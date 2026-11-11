@@ -19,6 +19,7 @@ export const profile = pgTable(
     rollNumber: text("roll_number"),
     department: text("department"),
     cohortYear: integer("cohort_year"),
+    phone: text("phone"),
     bio: text("bio"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -33,6 +34,10 @@ export const profile = pgTable(
     check(
       "profile_cohort_year_range",
       sql`${t.cohortYear} IS NULL OR ${t.cohortYear} BETWEEN 2000 AND 2100`
+    ),
+    check(
+      "profile_phone_format",
+      sql`${t.phone} IS NULL OR ${t.phone} ~ '^[6-9][0-9]{9}$'`
     ),
   ]
 ).enableRLS()

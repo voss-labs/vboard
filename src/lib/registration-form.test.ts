@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   MAX_QUESTIONS,
+  answerSize,
   countWords,
   keepsAnsweredQuestions,
   normalizeAnswer,
@@ -146,6 +147,16 @@ describe("normalizeAnswer and countWords", () => {
     expect(countWords("")).toBe(0)
     expect(countWords(" \n\t ")).toBe(0)
     expect(normalizeAnswer(" \n\t ")).toBe("")
+  })
+})
+
+describe("answerSize", () => {
+  it("gives a name or phone number one line and an essay a tall box", () => {
+    expect(answerSize({ maxWords: 5 })).toBe("line")
+    expect(answerSize({ maxWords: 12 })).toBe("line")
+    expect(answerSize({ maxWords: 13 })).toBe("short")
+    expect(answerSize({ maxWords: 80 })).toBe("short")
+    expect(answerSize({ maxWords: 300 })).toBe("long")
   })
 })
 
