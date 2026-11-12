@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { communityLogoUrl } from "@/lib/object-storage"
+import { mediaUrl } from "@/lib/media"
 import { cn } from "@/lib/utils"
 
 export function CommunityLogo({
@@ -11,7 +11,7 @@ export function CommunityLogo({
   logoUrl: string | null
   className?: string
 }) {
-  const source = communityLogoUrl(logoUrl)
+  const source = mediaUrl(logoUrl)
   return (
     <Avatar className={cn("size-14 rounded-xl", className)} aria-hidden>
       {source && <AvatarImage src={source} alt="" className="rounded-xl" />}

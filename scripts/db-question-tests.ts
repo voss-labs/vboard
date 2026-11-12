@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/node-postgres"
 import type { DbContext } from "@/db"
 import * as schema from "@/db/schema"
 import { getPostDetailBySlug } from "@/db/queries/posts"
+import { updateProfile } from "@/db/queries/profiles"
 import {
   cancelRegistration,
   decideRegistrations,
@@ -227,6 +228,31 @@ export async function testRegistrationQuestions(owner: Pool, app: Pool) {
     assert.equal(attendees[0].userId, "student")
     assert.deepEqual(attendees[0].answers, answers)
   }
+  const details = {
+    rollNumber: "23102A0054",
+    department: "CMPN",
+    phone: "9876543210",
+    bio: "Builds backend services",
+  }
+  await asActor("student", (ctx) =>
+    updateProfile(ctx, { ...details, cohortYear: 2023 })
+  )
+  const [reviewed] = await asActor("organizer", (ctx) =>
+    listRegistrations(ctx, event)
+  )
+  assert.equal(reviewed.cohortYear, 2023)
+  assert.equal(reviewed.phone, details.phone)
+  assert.equal(reviewed.bio, details.bio)
+  await assert.rejects(
+    asActor("student", (ctx) =>
+      updateProfile(ctx, { ...details, cohortYear: 2023, phone: "12345" })
+    )
+  )
+  await assert.rejects(
+    asActor("student", (ctx) =>
+      updateProfile(ctx, { ...details, cohortYear: 1999 })
+    )
+  )
 
   await assert.rejects(save("organizer", [role]))
   await assert.rejects(save("organizer", []))

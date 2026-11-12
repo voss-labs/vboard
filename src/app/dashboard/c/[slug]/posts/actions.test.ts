@@ -13,7 +13,14 @@ const mocks = vi.hoisted(() => ({
   decideRegistrations: vi.fn(),
   listRegistrations: vi.fn(),
   updatePost: vi.fn(),
+  upload: vi.fn(),
+  discard: vi.fn(),
   revalidate: vi.fn(),
+}))
+vi.mock("server-only", () => ({}))
+vi.mock("@/lib/object-storage", () => ({
+  uploadMedia: mocks.upload,
+  discardMedia: mocks.discard,
 }))
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }))
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }))
@@ -81,6 +88,7 @@ beforeEach(() => {
     can: () => true,
   })
   mocks.withDb.mockImplementation(async (_actor, work) => work(ctx))
+  mocks.listRegistrations.mockResolvedValue([])
   mocks.getPostById.mockResolvedValue({
     id: postId,
     communityId: "community-a",
@@ -168,6 +176,77 @@ describe("registration question edits", () => {
     await updatePostAction(null, editForm([]))
     expect(mocks.listRegistrations).not.toHaveBeenCalled()
     expect(mocks.updatePost).toHaveBeenCalled()
+  })
+})
+describe("post poster", () => {
+  const key =
+    "post-posters/community-a/08116243-476f-425b-b551-c590281474ab.png"
+  const reference = `neon://vboard/${key}`
+  const png = () =>
+    new File([Buffer.from("89504e470d0a1a0a", "hex")], "../forged.svg", {
+      type: "image/png",
+    })
+  beforeEach(() => {
+    mocks.upload.mockResolvedValue({ key, reference })
+    mocks.discard.mockResolvedValue(undefined)
+  })
+
+  it("stores an uploaded poster under the verified community and saves its reference", async () => {
+    const data = editForm([question])
+    data.set("posterFile", png())
+    await updatePostAction(null, data)
+    expect(mocks.upload).toHaveBeenCalledWith(
+      "poster",
+      "community-a",
+      expect.objectContaining({ contentType: "image/png", extension: "png" })
+    )
+    expect(mocks.updatePost).toHaveBeenCalledWith(
+      ctx,
+      "community-a",
+      postId,
+      expect.objectContaining({ imageUrl: reference })
+    )
+    expect(mocks.discard).not.toHaveBeenCalled()
+  })
+
+  it("leaves the poster alone when none is chosen and clears it on removal", async () => {
+    await updatePostAction(null, editForm([question]))
+    expect(mocks.updatePost.mock.calls[0][3].imageUrl).toBeUndefined()
+    const removal = editForm([question])
+    removal.set("removePoster", "on")
+    await updatePostAction(null, removal)
+    expect(mocks.updatePost.mock.calls[1][3].imageUrl).toBeNull()
+    expect(mocks.upload).not.toHaveBeenCalled()
+  })
+
+  it("rejects a disguised file and a forged poster address before storage", async () => {
+    const disguised = editForm([question])
+    disguised.set(
+      "posterFile",
+      new File(["<html>"], "poster.png", { type: "image/png" })
+    )
+    expect((await updatePostAction(null, disguised)).ok).toBe(false)
+    const forged = editForm([question])
+    forged.set("imageUrl", "https://images.example.org/poster.png")
+    await updatePostAction(null, forged)
+    expect(mocks.upload).not.toHaveBeenCalled()
+    expect(mocks.updatePost.mock.calls.at(-1)?.[3].imageUrl).toBeUndefined()
+  })
+
+  it("discards the new poster when the save is refused or fails", async () => {
+    mocks.listRegistrations.mockResolvedValue(answered)
+    const refused = editForm([])
+    refused.set("posterFile", png())
+    expect((await updatePostAction(null, refused)).ok).toBe(false)
+    expect(mocks.discard).toHaveBeenCalledExactlyOnceWith(key)
+    mocks.discard.mockClear()
+    mocks.updatePost.mockRejectedValue(new Error("private SQL details"))
+    const failed = editForm([question])
+    failed.set("posterFile", png())
+    const result = await updatePostAction(null, failed)
+    expect(result.ok).toBe(false)
+    expect(JSON.stringify(result)).not.toContain("private SQL details")
+    expect(mocks.discard).toHaveBeenCalledExactlyOnceWith(key)
   })
 })
 describe("event action ownership boundary", () => {

@@ -78,3 +78,30 @@ export function seatsLeft(
   if (capacity === null) return null
   return Math.max(0, capacity - seatsTaken)
 }
+
+export type RegistrationDecision =
+  "approve" | "reject" | "checkin" | "noshow" | "reset"
+
+export const DECISION_RESULT: Record<RegistrationDecision, RegistrationStatus> =
+  {
+    approve: "approved",
+    reject: "rejected",
+    checkin: "attended",
+    noshow: "no_show",
+    reset: "approved",
+  }
+
+const DECISION_SOURCES: Record<RegistrationDecision, RegistrationStatus[]> = {
+  approve: ["pending", "rejected"],
+  reject: ["pending", "approved"],
+  checkin: ["approved", "no_show"],
+  noshow: ["approved"],
+  reset: ["attended", "no_show"],
+}
+
+export function canReceiveDecision(
+  decision: RegistrationDecision,
+  status: string
+): boolean {
+  return (DECISION_SOURCES[decision] as string[]).includes(status)
+}

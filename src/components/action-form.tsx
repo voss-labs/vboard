@@ -22,7 +22,15 @@ export function ActionForm({
 }) {
   const form = useRef<HTMLFormElement>(null)
   const allowReset = useRef(false)
-  const [state, formAction] = useActionState(action, null)
+  const [state, formAction] = useActionState(
+    async (prev: ActionResult | null, formData: FormData) => {
+      const result = await action(prev, formData)
+      if (!result.ok) toast.error(result.error)
+      else if (result.message) toast.success(result.message)
+      return result
+    },
+    null
+  )
   const onDoneRef = useRef(onDone)
   const attachForm = useCallback((element: HTMLFormElement | null) => {
     form.current = element
@@ -39,16 +47,11 @@ export function ActionForm({
   })
 
   useEffect(() => {
-    if (!state) return
-    if (state.ok) {
-      allowReset.current = true
-      form.current?.reset()
-      allowReset.current = false
-      if (state.message) toast.success(state.message)
-      onDoneRef.current?.()
-    } else {
-      toast.error(state.error)
-    }
+    if (!state?.ok) return
+    allowReset.current = true
+    form.current?.reset()
+    allowReset.current = false
+    onDoneRef.current?.()
   }, [state])
 
   return (

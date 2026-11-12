@@ -2,8 +2,9 @@ import { z } from "zod"
 import { createInsertSchema } from "drizzle-zod"
 import { community, communityMember, post, profile } from "@/db/schema"
 import { parseCampusDateTime } from "@/lib/format"
+import { isPhone, normalizePhone, phoneSchema } from "@/lib/phone"
 import { questionsSchema } from "@/lib/registration-form"
-import { parseRollNumber } from "@/lib/roll-number"
+import { parseRollNumber, STUDY_YEARS } from "@/lib/roll-number"
 
 const optionalText = (max: number) =>
   z
@@ -182,6 +183,22 @@ export const newCommunitySchema = createInsertSchema(community)
   })
   .strict()
 
+export const communityRequestSchema = newCommunitySchema
+  .omit({ leadEmail: true })
+  .extend({
+    purpose: z
+      .string()
+      .trim()
+      .min(20, "Say a little more about what the community will do")
+      .max(600),
+    contactPhone: phoneSchema,
+    contactEmail: z
+      .email("Enter a valid contact email")
+      .max(254)
+      .transform((v) => v.trim().toLowerCase()),
+  })
+  .strict()
+
 export const memberFormSchema = createInsertSchema(communityMember)
   .pick({ role: true })
   .extend({
@@ -192,7 +209,7 @@ export const memberFormSchema = createInsertSchema(communityMember)
   })
   .strict()
 
-export const profileFormSchema = createInsertSchema(profile)
+const profileFields = createInsertSchema(profile)
   .pick({ rollNumber: true, bio: true })
   .extend({
     rollNumber: optionalText(30).transform((value, ctx) => {
@@ -219,15 +236,56 @@ export const profileFormSchema = createInsertSchema(profile)
         return z.NEVER
       }
     }),
+    year: z
+      .string()
+      .trim()
+      .transform((value, ctx) => {
+        if (value === "") return null
+        const year = STUDY_YEARS.find((option) => String(option) === value)
+        if (!year) {
+          ctx.addIssue({ code: "custom", message: "Choose your year." })
+          return z.NEVER
+        }
+        return year
+      }),
+    phone: z.string().transform((value, ctx) => {
+      const phone = normalizePhone(value)
+      if (phone === "") return null
+      if (!isPhone(phone)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a 10-digit mobile number.",
+        })
+        return z.NEVER
+      }
+      return phone
+    }),
     bio: optionalText(400),
   })
   .strict()
-  .transform((data) => ({
+
+function withDepartment(data: z.infer<typeof profileFields>) {
+  return {
     ...data,
+    year: data.rollNumber ? data.year : null,
     department: data.rollNumber
       ? (parseRollNumber(data.rollNumber)?.department ?? null)
       : null,
-  }))
+  }
+}
+
+export const profileFormSchema = profileFields.transform(withDepartment)
+
+export const onboardingFormSchema = profileFields
+  .superRefine((data, ctx) => {
+    if (!data.rollNumber)
+      ctx.addIssue({ code: "custom", message: "Enter your roll number." })
+    else if (!data.year)
+      ctx.addIssue({ code: "custom", message: "Choose your year." })
+    else if (!data.phone)
+      ctx.addIssue({ code: "custom", message: "Enter your contact number." })
+  })
+  .transform(withDepartment)
 
 export function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? "Check the form and try again"

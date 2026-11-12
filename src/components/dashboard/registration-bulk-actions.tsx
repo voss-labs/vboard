@@ -1,122 +1,97 @@
 "use client"
 
-import { ActionForm } from "@/components/action-form"
-import { SubmitButton } from "@/components/submit-button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { decideRegistrationsAction } from "@/app/dashboard/c/[slug]/posts/actions"
+import { XIcon } from "lucide-react"
+import type { Decide } from "@/components/dashboard/use-registration-decisions"
+import { Button } from "@/components/ui/button"
+import type { ButtonVariants } from "@/components/ui/button-variants"
+import {
+  canReceiveDecision,
+  type RegistrationDecision,
+} from "@/lib/registration"
+
+const DECISIONS: {
+  value: RegistrationDecision
+  label: string
+  variant: ButtonVariants["variant"]
+  needs: "decide" | "checkIn"
+}[] = [
+  { value: "approve", label: "Approve", variant: "default", needs: "decide" },
+  { value: "reject", label: "Reject", variant: "destructive", needs: "decide" },
+  {
+    value: "checkin",
+    label: "Check in",
+    variant: "secondary",
+    needs: "checkIn",
+  },
+  { value: "noshow", label: "No-show", variant: "outline", needs: "checkIn" },
+  {
+    value: "reset",
+    label: "Undo check-in",
+    variant: "ghost",
+    needs: "checkIn",
+  },
+]
 
 export function RegistrationBulkActions({
-  slug,
-  postId,
   selected,
-  visibleIds,
   canDecide,
   canCheckIn,
-  onSelectedChange,
+  onDecide,
+  onClear,
 }: {
-  slug: string
-  postId: string
-  selected: Set<string>
-  visibleIds: string[]
+  selected: { id: string; status: string }[]
   canDecide: boolean
   canCheckIn: boolean
-  onSelectedChange: (next: Set<string>) => void
+  onDecide: Decide
+  onClear: () => void
 }) {
-  const none = selected.size === 0
-  const allSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const allowed = { decide: canDecide, checkIn: canCheckIn }
+  const actions = DECISIONS.filter((d) => allowed[d.needs])
+    .map((d) => ({
+      ...d,
+      ids: selected
+        .filter((row) => canReceiveDecision(d.value, row.status))
+        .map((row) => row.id),
+    }))
+    .filter((d) => d.ids.length > 0)
 
   return (
-    <ActionForm
-      action={decideRegistrationsAction}
-      onDone={() => onSelectedChange(new Set())}
-      className="bg-muted/40 flex flex-wrap items-center gap-2 border-b px-4 py-3 md:px-6 [&>[role=alert]]:w-full"
-    >
-      <input type="hidden" name="slug" value={slug} />
-      <input type="hidden" name="postId" value={postId} />
-      {[...selected].map((id) => (
-        <input key={id} type="hidden" name="registrationId" value={id} />
-      ))}
-      <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
-        <label className="flex min-h-11 items-center gap-2 pr-2 text-xs">
-          <Checkbox
-            checked={allSelected}
-            onCheckedChange={(on) =>
-              onSelectedChange(on ? new Set(visibleIds) : new Set())
-            }
-            aria-label="Select all visible registrations"
-          />
-          Select visible
-        </label>
-        <span
-          aria-live="polite"
-          className="text-muted-foreground text-sm tabular-nums sm:mr-2"
-        >
-          {selected.size} selected
+    <div className="bg-card/95 supports-backdrop-filter:bg-card/80 sticky bottom-0 z-10 flex flex-wrap items-center gap-2 border-t px-4 py-3 backdrop-blur md:px-6">
+      <div className="mr-auto flex items-center gap-1">
+        <span aria-live="polite" className="text-sm font-medium tabular-nums">
+          {selected.length} selected
         </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Clear selection"
+          onClick={onClear}
+        >
+          <XIcon />
+        </Button>
       </div>
-      {canDecide && (
-        <>
-          <SubmitButton
-            name="decision"
-            value="approve"
-            size="sm"
-            className="flex-1 sm:flex-none"
-            disabled={none}
-            pendingLabel="Applying…"
-          >
-            Approve
-          </SubmitButton>
-          <SubmitButton
-            name="decision"
-            value="reject"
-            size="sm"
-            className="flex-1 sm:flex-none"
-            variant="destructive"
-            disabled={none}
-            pendingLabel="Applying…"
-          >
-            Reject
-          </SubmitButton>
-        </>
+      {actions.length === 0 && (
+        <p className="text-muted-foreground text-xs">
+          Nothing to do for this selection.
+        </p>
       )}
-      {canCheckIn && (
-        <>
-          <SubmitButton
-            name="decision"
-            value="checkin"
-            size="sm"
-            className="flex-1 sm:flex-none"
-            variant="secondary"
-            disabled={none}
-            pendingLabel="Applying…"
-          >
-            Check in
-          </SubmitButton>
-          <SubmitButton
-            name="decision"
-            value="noshow"
-            size="sm"
-            className="flex-1 sm:flex-none"
-            variant="outline"
-            disabled={none}
-            pendingLabel="Applying…"
-          >
-            No-show
-          </SubmitButton>
-          <SubmitButton
-            name="decision"
-            value="reset"
-            size="sm"
-            className="flex-1 sm:flex-none"
-            variant="ghost"
-            disabled={none}
-            pendingLabel="Applying…"
-          >
-            Undo check-in
-          </SubmitButton>
-        </>
-      )}
-    </ActionForm>
+      {actions.map((d) => (
+        <Button
+          key={d.value}
+          size="sm"
+          variant={d.variant}
+          onClick={() => {
+            onDecide(d.ids, d.value)
+            onClear()
+          }}
+        >
+          {d.label}
+          {d.ids.length < selected.length && (
+            <span className="tabular-nums opacity-70">{d.ids.length}</span>
+          )}
+        </Button>
+      ))}
+    </div>
   )
 }

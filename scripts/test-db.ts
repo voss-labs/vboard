@@ -12,6 +12,8 @@ import { testRuntimeBoundaries } from "./db-runtime-tests"
 import { testTransitionBoundaries } from "./db-transition-tests"
 import { testFilteredProjections } from "./db-projection-tests"
 import { testRegistrationQuestions } from "./db-question-tests"
+import { testCommunityRequests } from "./db-request-tests"
+import { testUpdateRecipients } from "./db-update-tests"
 import { seedLegacyFixture, seedSecurityFixture } from "./db-test-fixtures"
 
 async function main() {
@@ -111,6 +113,8 @@ async function main() {
           })
           await testFilteredProjections(owner, app)
           await testRegistrationQuestions(owner, app)
+          await testCommunityRequests(owner, app)
+          await testUpdateRecipients(owner, app)
           await testTransitionBoundaries(owner, app)
           await testRuntimeBoundaries({
             ownerUrl: target.toString(),

@@ -34,6 +34,8 @@ export type SessionUser = {
   siteRole: SiteRole
   rollNumber: string | null
   department: string | null
+  cohortYear: number | null
+  phone: string | null
   bio: string | null
   memberships: Membership[]
 }
@@ -68,6 +70,8 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       siteRole: (await isSuperAdmin(ctx)) ? "super_admin" : "student",
       rollNumber: profile?.rollNumber ?? null,
       department: profile?.department ?? null,
+      cohortYear: profile?.cohortYear ?? null,
+      phone: profile?.phone ?? null,
       bio: profile?.bio ?? null,
       memberships,
     }

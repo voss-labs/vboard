@@ -13,14 +13,15 @@ vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidate }))
 vi.mock("@/db", () => ({ withDb: mocks.withDb }))
 vi.mock("@/lib/session", () => ({ actionCommunityAccess: mocks.access }))
 vi.mock("@/db/queries/communities", () => ({ updateCommunity: mocks.update }))
+vi.mock("server-only", () => ({}))
 vi.mock("@/lib/object-storage", () => ({
-  uploadCommunityLogo: mocks.upload,
-  discardCommunityLogo: mocks.discard,
+  uploadMedia: mocks.upload,
+  discardMedia: mocks.discard,
 }))
 
 const communityId = "c7c1339b-cf14-471a-96e8-82d8f93901df"
 const key = `community-logos/${communityId}/08116243-476f-425b-b551-c590281474ab.png`
-const reference = `neon://vboard-assets/${key}`
+const reference = `neon://vboard/${key}`
 const ctx = { actorId: "verified-user", tx: {} }
 function form(upload = false) {
   const data = new FormData()
@@ -66,7 +67,7 @@ describe("community logo settings action", () => {
     )
     expect((await updateCommunityAction(null, badImage)).ok).toBe(false)
     const forged = form(true)
-    forged.set("logoUrl", "neon://vboard-assets/another-community.png")
+    forged.set("logoUrl", "neon://vboard/another-community.png")
     expect((await updateCommunityAction(null, forged)).ok).toBe(false)
     expect(mocks.upload).not.toHaveBeenCalled()
     expect(mocks.update).not.toHaveBeenCalled()
@@ -91,6 +92,7 @@ describe("community logo settings action", () => {
     data.set("userId", "forged-user")
     expect((await updateCommunityAction(null, data)).ok).toBe(true)
     expect(mocks.upload).toHaveBeenCalledWith(
+      "logo",
       communityId,
       expect.objectContaining({ contentType: "image/png", extension: "png" })
     )

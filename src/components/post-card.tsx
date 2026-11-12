@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -11,12 +12,14 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { bodyPreview, formatEventDate, formatShortDate } from "@/lib/format"
+import { mediaUrl } from "@/lib/media"
 
 export type PostCardPost = {
   id: string
   slug: string
   title: string
   body: string
+  imageUrl: string | null
   communitySlug: string
   communityName: string
   isEvent: boolean
@@ -39,6 +42,7 @@ export function PostCard({
 }) {
   const compact = variant === "compact"
   const date = post.startsAt ? formatShortDate(post.startsAt).split(" ") : null
+  const poster = mediaUrl(post.imageUrl)
 
   return (
     <article className="min-w-0">
@@ -118,6 +122,25 @@ export function PostCard({
               </ul>
             )}
           </div>
+          {poster && (
+            <Link
+              href={`/posts/${post.slug}`}
+              tabIndex={-1}
+              aria-hidden
+              className={cn(
+                "bg-muted relative shrink-0 self-start overflow-hidden rounded-lg border",
+                compact ? "size-16" : "size-20 sm:size-28 md:size-32"
+              )}
+            >
+              <Image
+                src={poster}
+                alt=""
+                fill
+                sizes="(min-width: 768px) 128px, 112px"
+                className="object-cover"
+              />
+            </Link>
+          )}
         </CardContent>
         <CardFooter className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5">
           <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

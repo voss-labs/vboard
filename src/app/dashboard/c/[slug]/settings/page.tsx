@@ -1,7 +1,10 @@
+import Link from "next/link"
+import { ExternalLinkIcon } from "lucide-react"
 import { ActionForm } from "@/components/action-form"
 import { CommunityLogo } from "@/components/community-logo"
-import { FormFooter, Panel } from "@/components/dashboard/ui"
+import { Panel } from "@/components/dashboard/ui"
 import { SubmitButton } from "@/components/submit-button"
+import { buttonVariants } from "@/components/ui/button-variants"
 import {
   Field,
   FieldDescription,
@@ -11,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { isStoredCommunityLogo } from "@/lib/community-logo"
+import { IMAGE_ACCEPT, isStoredMedia } from "@/lib/media"
 import { requireCommunityAccess } from "@/lib/session"
 import { updateCommunityAction } from "@/app/dashboard/c/[slug]/settings/actions"
 
@@ -24,89 +27,127 @@ export default async function CommunitySettingsPage({
   const { community } = await requireCommunityAccess(slug, "community:update")
 
   return (
-    <Panel
-      title="Community details"
-      description="Your public identity. Changes appear on the community page and its posts."
-      className="max-w-3xl"
-    >
-      <ActionForm
-        key={[community.name, community.description, community.logoUrl].join(
-          "|"
-        )}
-        action={updateCommunityAction}
+    <div className="grid items-start gap-6 @5xl/main:grid-cols-[minmax(0,1fr)_22rem]">
+      <Panel
+        title="Community details"
+        description="How the community appears on its public page and its posts."
       >
-        <input type="hidden" name="slug" value={slug} />
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="name">Name</FieldLabel>
-            <Input
-              id="name"
-              name="name"
-              defaultValue={community.name}
-              required
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="description">About</FieldLabel>
-            <Textarea
-              id="description"
-              name="description"
-              defaultValue={community.description}
-              maxLength={600}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="logoFile">Community logo</FieldLabel>
-            <CommunityLogo name={community.name} logoUrl={community.logoUrl} />
-            <Input
-              id="logoFile"
-              name="logoFile"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              aria-describedby="logoFile-help"
-            />
-            <FieldDescription id="logoFile-help">
-              PNG, JPEG or WebP, up to 2 MiB. Uploading replaces the current
-              logo.
-            </FieldDescription>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="logoUrl">Or use an image URL</FieldLabel>
-            <Input
-              id="logoUrl"
-              name="logoUrl"
-              type="url"
-              defaultValue={
-                isStoredCommunityLogo(community.logoUrl)
-                  ? ""
-                  : (community.logoUrl ?? "")
-              }
-              placeholder="https://"
-            />
-            <FieldDescription>
-              Use a publicly accessible image URL.
-            </FieldDescription>
-          </Field>
-          {community.logoUrl && (
-            <Field orientation="horizontal">
-              <FieldLabel htmlFor="removeLogo">Remove logo</FieldLabel>
-              <Switch id="removeLogo" name="removeLogo" />
-            </Field>
+        <ActionForm
+          key={[community.name, community.description, community.logoUrl].join(
+            "|"
           )}
-          <Field>
-            <FieldLabel htmlFor="address">Address</FieldLabel>
-            <Input
-              className="font-mono text-xs"
-              id="address"
-              value={`/communities/${community.slug}`}
-              readOnly
+          action={updateCommunityAction}
+        >
+          <input type="hidden" name="slug" value={slug} />
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="name">Name</FieldLabel>
+              <Input
+                id="name"
+                name="name"
+                defaultValue={community.name}
+                required
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="description">About</FieldLabel>
+              <Textarea
+                id="description"
+                name="description"
+                defaultValue={community.description}
+                maxLength={600}
+              />
+              <FieldDescription>
+                Shown on the community page and in the directory. Up to 600
+                characters.
+              </FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="logoFile">Logo</FieldLabel>
+              <div className="flex flex-col gap-4 @md/field-group:flex-row @md/field-group:items-start">
+                <CommunityLogo
+                  name={community.name}
+                  logoUrl={community.logoUrl}
+                  className="size-16 shrink-0"
+                />
+                <div className="grid min-w-0 flex-1 gap-3">
+                  <div className="grid gap-1.5">
+                    <Input
+                      id="logoFile"
+                      name="logoFile"
+                      type="file"
+                      accept={IMAGE_ACCEPT}
+                      aria-describedby="logoFile-help"
+                    />
+                    <FieldDescription id="logoFile-help">
+                      PNG, JPEG or WebP, up to 2 MiB. Uploading replaces the
+                      current logo.
+                    </FieldDescription>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Input
+                      id="logoUrl"
+                      name="logoUrl"
+                      type="url"
+                      aria-label="Logo image URL"
+                      defaultValue={
+                        isStoredMedia(community.logoUrl)
+                          ? ""
+                          : (community.logoUrl ?? "")
+                      }
+                      placeholder="Or paste a public image URL"
+                    />
+                  </div>
+                  {community.logoUrl && (
+                    <label className="flex w-fit items-center gap-2 text-sm">
+                      <Switch id="removeLogo" name="removeLogo" />
+                      Remove the current logo
+                    </label>
+                  )}
+                </div>
+              </div>
+            </Field>
+            <div className="flex justify-end border-t pt-4">
+              <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+            </div>
+          </FieldGroup>
+        </ActionForm>
+      </Panel>
+      <Panel title="On the public site">
+        <div className="flex flex-col gap-5">
+          <div className="flex min-w-0 gap-3">
+            <CommunityLogo
+              name={community.name}
+              logoUrl={community.logoUrl}
+              className="size-12 shrink-0"
             />
-          </Field>
-          <FormFooter description="Your community address stays the same.">
-            <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
-          </FormFooter>
-        </FieldGroup>
-      </ActionForm>
-    </Panel>
+            <div className="min-w-0 space-y-1">
+              <p className="leading-snug font-semibold break-words">
+                {community.name}
+              </p>
+              <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed break-words">
+                {community.description || "No description yet."}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-1 border-t pt-4">
+            <p className="text-muted-foreground text-xs">Address</p>
+            <p className="text-sm break-all">
+              vboard.vosslabs.org/communities/{community.slug}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              It stays the same when the name changes.
+            </p>
+          </div>
+          <Link
+            href={`/communities/${community.slug}`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            <ExternalLinkIcon data-icon="inline-start" />
+            Open public page
+          </Link>
+        </div>
+      </Panel>
+    </div>
   )
 }

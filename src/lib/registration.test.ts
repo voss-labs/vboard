@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  canReceiveDecision,
   canSeeLocation,
   initialStatus,
   registrationAvailability,
@@ -125,5 +126,20 @@ describe("seatsLeft", () => {
 
   it("never goes negative", () => {
     expect(seatsLeft(10, 12)).toBe(0)
+  })
+})
+
+describe("canReceiveDecision", () => {
+  it("lets a decision through only from the statuses it can follow", () => {
+    expect(canReceiveDecision("approve", "pending")).toBe(true)
+    expect(canReceiveDecision("approve", "rejected")).toBe(true)
+    expect(canReceiveDecision("approve", "approved")).toBe(false)
+    expect(canReceiveDecision("approve", "cancelled")).toBe(false)
+    expect(canReceiveDecision("reject", "approved")).toBe(true)
+    expect(canReceiveDecision("reject", "attended")).toBe(false)
+    expect(canReceiveDecision("checkin", "approved")).toBe(true)
+    expect(canReceiveDecision("checkin", "pending")).toBe(false)
+    expect(canReceiveDecision("noshow", "no_show")).toBe(false)
+    expect(canReceiveDecision("reset", "attended")).toBe(true)
   })
 })

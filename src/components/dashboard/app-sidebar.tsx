@@ -7,6 +7,8 @@ import {
   CalendarIcon,
   HistoryIcon,
   LayoutDashboardIcon,
+  MailIcon,
+  PlusIcon,
   ShieldIcon,
   UserIcon,
   UsersIcon,
@@ -34,7 +36,9 @@ const ICONS = {
   events: CalendarIcon,
   profile: UserIcon,
   communities: ShieldIcon,
+  start: PlusIcon,
   people: UsersIcon,
+  updates: MailIcon,
   audit: HistoryIcon,
 }
 

@@ -9,6 +9,7 @@ import {
 } from "@/db/queries/registrations"
 import { done, fail, type ActionResult } from "@/lib/action-result"
 import { attemptAction } from "@/lib/action-error"
+import { isProfileComplete } from "@/lib/profile"
 import { validateAnswers } from "@/lib/registration-form"
 import { getSessionUser } from "@/lib/session"
 const input = z.object({ postId: z.uuid() }).strict()
@@ -23,6 +24,8 @@ export async function registerAction(
 ): Promise<ActionResult> {
   const user = await getSessionUser()
   if (!user) return fail("Sign in to register.")
+  if (!isProfileComplete(user))
+    return fail("Finish your profile before you register.")
   const parsed = input.safeParse({ postId: formData.get("postId") })
   if (!parsed.success) return fail("Unknown event.")
   const result = await attemptAction(() =>

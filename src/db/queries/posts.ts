@@ -92,6 +92,7 @@ export async function createPost(
     slug: string
     communityId: string
     status: "draft" | "published"
+    imageUrl?: string | null
   }
 ) {
   const row = requireRow(
@@ -139,7 +140,7 @@ export async function updatePost(
   ctx: DbContext,
   communityId: string,
   id: string,
-  data: PostInput
+  data: PostInput & { imageUrl?: string | null }
 ) {
   await changePost(ctx, communityId, id, data, "post.updated")
 }

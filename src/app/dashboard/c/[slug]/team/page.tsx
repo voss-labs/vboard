@@ -3,22 +3,13 @@ import { RecordTable } from "@/components/dashboard/record-table"
 import { ActionForm } from "@/components/action-form"
 import { ConfirmSubmit } from "@/components/confirm-submit"
 import { AutoSubmitSelect } from "@/components/dashboard/role-select"
-import {
-  EmptyState,
-  FormFooter,
-  Panel,
-  RoleBadge,
-} from "@/components/dashboard/ui"
+import { EmptyState, Panel, RoleBadge } from "@/components/dashboard/ui"
 import { FormSelect } from "@/components/form-select"
 import { SubmitButton } from "@/components/submit-button"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   TableBody,
   TableCell,
@@ -27,12 +18,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { listMembers } from "@/db/queries/members"
+import { initials } from "@/lib/identity"
 import {
   assignableCommunityRoles,
   canChangeMember,
-  COMMUNITY_ROLE_DESCRIPTION,
   COMMUNITY_ROLE_LABEL,
-  type CommunityRole,
 } from "@/lib/rbac"
 import { requireCommunityAccess } from "@/lib/session"
 import {
@@ -56,12 +46,56 @@ export default async function TeamPage({
   const actor = { siteRole: access.user.siteRole, communityRole: access.role }
 
   return (
-    <div className="grid gap-6 @5xl/main:grid-cols-[1.7fr_1fr]">
+    <div className="flex flex-col gap-6">
       <Panel
         title="Team"
-        description={`${members.length} people help run ${access.community.name}.`}
+        description={`${members.length} ${members.length === 1 ? "person helps" : "people help"} run ${access.community.name}.`}
         flush
       >
+        {canManage && (
+          <ActionForm
+            action={addMemberAction}
+            className="border-b px-4 py-4 md:px-6"
+          >
+            <input type="hidden" name="slug" value={slug} />
+            <div className="flex flex-col gap-3 @2xl/main:flex-row @2xl/main:items-end">
+              <div className="grid min-w-0 flex-1 gap-1.5">
+                <Label htmlFor="email">Add someone by VIT email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="name.surname@vit.edu.in"
+                />
+              </div>
+              <div className="grid gap-1.5 @2xl/main:w-44">
+                <Label htmlFor="role">Role</Label>
+                <FormSelect
+                  id="role"
+                  name="role"
+                  label="Role"
+                  defaultValue={
+                    assignable.includes("organizer")
+                      ? "organizer"
+                      : assignable[0]
+                  }
+                  items={assignable.map((r) => ({
+                    value: r,
+                    label: COMMUNITY_ROLE_LABEL[r],
+                  }))}
+                />
+              </div>
+              <SubmitButton pendingLabel="Adding…">Add member</SubmitButton>
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs">
+              They must have signed in to vboard once.{" "}
+              {access.role === "lead"
+                ? "Only Super admin appoints Leads."
+                : "Super admin can appoint Leads."}
+            </p>
+          </ActionForm>
+        )}
         {members.length === 0 ? (
           <EmptyState
             title="No team members"
@@ -74,9 +108,11 @@ export default async function TeamPage({
               <TableRow>
                 <TableHead className="pl-6">Member</TableHead>
                 <TableHead>Roll no.</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead className={canManage ? "" : "pr-6"}>Role</TableHead>
                 {canManage && (
-                  <TableHead className="pr-6 text-right">Actions</TableHead>
+                  <TableHead className="pr-6">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -91,20 +127,32 @@ export default async function TeamPage({
                 return (
                   <TableRow key={m.id}>
                     <TableCell className="pl-6">
-                      <div className="flex items-center gap-2 font-medium">
-                        {m.name}
-                        {m.userId === access.user.id && (
-                          <Badge variant="secondary">You</Badge>
-                        )}
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {m.email}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar className="size-9 max-md:hidden">
+                          <AvatarFallback className="text-xs font-medium">
+                            {initials(m.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 font-medium">
+                            {m.name}
+                            {m.userId === access.user.id && (
+                              <Badge variant="secondary">You</Badge>
+                            )}
+                          </div>
+                          <div className="text-muted-foreground text-xs break-all">
+                            {m.email}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell data-label="Roll no." className="tabular-nums">
                       {m.rollNumber ?? "—"}
                     </TableCell>
-                    <TableCell data-label="Role">
+                    <TableCell
+                      data-label="Role"
+                      className={canManage ? "" : "pr-6"}
+                    >
                       {editable ? (
                         <AutoSubmitSelect
                           action={changeMemberRoleAction}
@@ -125,10 +173,7 @@ export default async function TeamPage({
                       )}
                     </TableCell>
                     {canManage && (
-                      <TableCell
-                        data-label="Actions"
-                        className="pr-6 text-right"
-                      >
+                      <TableCell className="pr-6 md:text-right">
                         {editable && (
                           <ActionForm
                             action={removeMemberAction}
@@ -138,6 +183,7 @@ export default async function TeamPage({
                             <input type="hidden" name="memberId" value={m.id} />
                             <ConfirmSubmit
                               label="Remove"
+                              variant="ghost"
                               title={`Remove ${m.name}?`}
                               description="They lose access to this community's dashboard straight away."
                               confirmLabel="Remove"
@@ -153,69 +199,6 @@ export default async function TeamPage({
           </RecordTable>
         )}
       </Panel>
-
-      <div className="flex flex-col gap-6">
-        {canManage && (
-          <Panel
-            title="Add to the team"
-            description="Add someone who has already signed in to vboard. Their role determines what they can manage."
-          >
-            <ActionForm action={addMemberAction}>
-              <input type="hidden" name="slug" value={slug} />
-              <FieldGroup>
-                <Field>
-                  <FieldLabel htmlFor="email">VIT email</FieldLabel>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="name.surname@vit.edu.in"
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="role">Role</FieldLabel>
-                  <FormSelect
-                    id="role"
-                    name="role"
-                    label="Role"
-                    defaultValue={
-                      assignable.includes("organizer")
-                        ? "organizer"
-                        : assignable[0]
-                    }
-                    items={assignable.map((r) => ({
-                      value: r,
-                      label: COMMUNITY_ROLE_LABEL[r],
-                    }))}
-                  />
-                  <FieldDescription>
-                    {access.role === "lead"
-                      ? "Only Super admin appoints Leads."
-                      : "Super admin can appoint Leads."}
-                  </FieldDescription>
-                </Field>
-                <FormFooter>
-                  <SubmitButton pendingLabel="Adding…">Add member</SubmitButton>
-                </FormFooter>
-              </FieldGroup>
-            </ActionForm>
-          </Panel>
-        )}
-
-        <Panel title="What each role can do">
-          <ul className="grid gap-4">
-            {(["lead", "organizer"] as CommunityRole[]).map((r) => (
-              <li key={r} className="grid gap-1.5">
-                <RoleBadge role={r} />
-                <p className="text-muted-foreground text-sm">
-                  {COMMUNITY_ROLE_DESCRIPTION[r]}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
     </div>
   )
 }

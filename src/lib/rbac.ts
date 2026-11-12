@@ -8,6 +8,7 @@ export type SiteCapability =
   | "user:read"
   | "post:moderate"
   | "audit:read"
+  | "update:send"
 
 export type CommunityCapability =
   | "community:update"
@@ -29,11 +30,6 @@ export const SITE_ROLE_LABEL: Record<SiteRole, string> = {
 export const COMMUNITY_ROLE_LABEL: Record<CommunityRole, string> = {
   lead: "Lead",
   organizer: "Organizer",
-}
-export const COMMUNITY_ROLE_DESCRIPTION: Record<CommunityRole, string> = {
-  lead: "Runs the community, manages its settings and appoints Organizers.",
-  organizer:
-    "Creates events and posts, decides registrations and manages attendance.",
 }
 const ORGANIZER: CommunityCapability[] = [
   "post:read",

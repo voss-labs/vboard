@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
+  cohortYearFor,
   currentYear,
   DEPARTMENTS,
   DEPARTMENT_LABELS,
   expectedYear,
+  rollStudyYear,
+  studyYear,
   parseRollNumber,
 } from "@/lib/roll-number"
 
@@ -48,16 +51,23 @@ describe("parseRollNumber", () => {
     })
   })
 
-  it.each(["101", "102"])("accepts division C for branch %s", (code) => {
-    expect(parseRollNumber(`26${code}C0001`)?.division).toBe("C")
-  })
-
-  it.each(["103", "104", "105", "108"])(
-    "rejects division C for branch %s",
+  it.each(["101", "102", "103", "104", "105", "108"])(
+    "accepts any division letter for branch %s",
     (code) => {
-      expect(parseRollNumber(`26${code}C0001`)).toBeNull()
+      for (const division of ["A", "C", "D", "H", "Z"])
+        expect(parseRollNumber(`26${code}${division}0001`)?.division).toBe(
+          division
+        )
     }
   )
+
+  it("accepts a first-year EXCS roll number in division C", () => {
+    expect(parseRollNumber("26108C0085")).toMatchObject({
+      admissionYear: 2026,
+      department: "EXCS",
+      division: "C",
+    })
+  })
 
   it("preserves an unknown branch without inferring a department", () => {
     expect(parseRollNumber("26999C0001")).toEqual({
@@ -70,12 +80,16 @@ describe("parseRollNumber", () => {
     })
   })
 
-  it.each(["", "26101A001", "26101A00012", "26101D0001", "26 101A0001"])(
-    "rejects malformed roll number %j",
-    (raw) => {
-      expect(parseRollNumber(raw)).toBeNull()
-    }
-  )
+  it.each([
+    "",
+    "26101A001",
+    "26101A00012",
+    "2610110001",
+    "26101AA001",
+    "26 101A0001",
+  ])("rejects malformed roll number %j", (raw) => {
+    expect(parseRollNumber(raw)).toBeNull()
+  })
 
   it.each([
     ["1999", false],
@@ -125,9 +139,36 @@ describe("currentYear", () => {
 
   it("returns null when the roll number or inferred year is invalid", () => {
     expect(currentYear("invalid", academicYear)).toBeNull()
-    expect(currentYear("26104C0001", academicYear)).toBeNull()
+    expect(currentYear("2610410001", academicYear)).toBeNull()
     expect(currentYear("27101A0001", academicYear)).toBeNull()
     expect(currentYear("22101A0001", academicYear)).toBeNull()
     expect(currentYear("23101A2000", academicYear)).toBeNull()
+  })
+})
+
+describe("study year", () => {
+  const november = new Date(2026, 10, 11)
+
+  it.each([
+    [1, 2026],
+    [2, 2025],
+    [3, 2024],
+    [4, 2023],
+  ] as const)("stores year %s as the %s cohort", (year, cohort) => {
+    expect(cohortYearFor(year, november)).toBe(cohort)
+    expect(studyYear(cohort, november)).toBe(year)
+  })
+
+  it("moves a stored cohort up on June 1 and ends after fourth year", () => {
+    expect(studyYear(2024, new Date(2027, 4, 31))).toBe(3)
+    expect(studyYear(2024, new Date(2027, 5, 1))).toBe(4)
+    expect(studyYear(2024, new Date(2028, 5, 1))).toBeNull()
+    expect(studyYear(2027, november)).toBeNull()
+  })
+
+  it("suggests a year from the roll number, one ahead for DSY", () => {
+    expect(rollStudyYear("24102A0054", november)).toBe(3)
+    expect(rollStudyYear("25102A2001", november)).toBe(3)
+    expect(rollStudyYear("invalid", november)).toBeNull()
   })
 })

@@ -120,6 +120,11 @@ export function QuestionBuilder({
         name="registrationQuestions"
         value={serialize(drafts)}
       />
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Every registration already comes with the student&apos;s name, VIT
+        email, roll number, department, division, year and contact number. Ask
+        only what is specific to this event.
+      </p>
       {frozen.size > 0 && (
         <p className="text-muted-foreground text-sm leading-relaxed">
           Students have already answered. You can reword questions and choices,

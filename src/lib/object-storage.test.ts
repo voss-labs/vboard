@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import {
-  communityLogoUrl,
-  discardCommunityLogo,
-  uploadCommunityLogo,
-} from "@/lib/object-storage"
+import { discardMedia, readMedia, uploadMedia } from "@/lib/object-storage"
 
 const mocks = vi.hoisted(() => ({
   client: vi.fn(),
@@ -25,6 +21,10 @@ vi.mock("@aws-sdk/client-s3", () => ({
   DeleteObjectCommand: class {
     constructor(public input: unknown) {}
   },
+  GetObjectCommand: class {
+    constructor(public input: unknown) {}
+  },
+  NoSuchKey: class extends Error {},
 }))
 
 const communityId = "c7c1339b-cf14-471a-96e8-82d8f93901df"
@@ -35,41 +35,14 @@ beforeEach(() => {
   vi.stubEnv("AWS_REGION", "us-east-2")
   vi.stubEnv("AWS_ACCESS_KEY_ID", "test-storage-key")
   vi.stubEnv("AWS_SECRET_ACCESS_KEY", "test-storage-secret")
-  vi.stubEnv("NEON_STORAGE_BUCKET", "vboard-assets")
+  vi.stubEnv("NEON_STORAGE_BUCKET", "vboard")
   mocks.send.mockResolvedValue({})
 })
 afterEach(() => vi.unstubAllEnvs())
 
 describe("branch scoped object storage", () => {
-  it("resolves inherited object keys through the current branch endpoint", () => {
-    expect(communityLogoUrl(`neon://vboard-assets/${key}`)).toBe(
-      `https://preview.storage.example.neon.tech/vboard-assets/${key}`
-    )
-    vi.stubEnv(
-      "AWS_ENDPOINT_URL_S3",
-      "https://production.storage.example.neon.tech"
-    )
-    expect(communityLogoUrl(`neon://vboard-assets/${key}`)).toBe(
-      `https://production.storage.example.neon.tech/vboard-assets/${key}`
-    )
-    expect(communityLogoUrl("https://example.org/logo.png")).toBe(
-      "https://example.org/logo.png"
-    )
-  })
-
-  it("fails closed for missing config, malformed paths and a different bucket", () => {
-    for (const value of [
-      `neon://private/${key}`,
-      "neon://vboard-assets/../private/file",
-      `neon://vboard-assets/${key}?token=unexpected`,
-    ])
-      expect(communityLogoUrl(value)).toBeNull()
-    vi.stubEnv("AWS_ENDPOINT_URL_S3", "")
-    expect(communityLogoUrl(`neon://vboard-assets/${key}`)).toBeNull()
-  })
-
   it("uploads with a fresh immutable key, correct content headers and path style", async () => {
-    const result = await uploadCommunityLogo(communityId, {
+    const result = await uploadMedia("logo", communityId, {
       body: new Uint8Array([1, 2, 3]),
       contentType: "image/png",
       extension: "png",
@@ -77,7 +50,7 @@ describe("branch scoped object storage", () => {
     expect(result.key).toMatch(
       new RegExp(`^community-logos/${communityId}/[a-f0-9-]{36}\\.png$`)
     )
-    expect(result.reference).toBe(`neon://vboard-assets/${result.key}`)
+    expect(result.reference).toBe(`neon://vboard/${result.key}`)
     expect(mocks.client).toHaveBeenCalledWith(
       expect.objectContaining({
         forcePathStyle: true,
@@ -89,7 +62,7 @@ describe("branch scoped object storage", () => {
       })
     )
     expect(mocks.send.mock.calls[0][0].input).toMatchObject({
-      Bucket: "vboard-assets",
+      Bucket: "vboard",
       Key: result.key,
       ContentType: "image/png",
       ContentLength: 3,
@@ -101,7 +74,7 @@ describe("branch scoped object storage", () => {
   it("fails before constructing a client with missing credentials", async () => {
     vi.stubEnv("AWS_SECRET_ACCESS_KEY", "")
     await expect(
-      uploadCommunityLogo(communityId, {
+      uploadMedia("poster", communityId, {
         body: new Uint8Array(),
         contentType: "image/png",
         extension: "png",
@@ -115,7 +88,7 @@ describe("branch scoped object storage", () => {
     async (endpoint) => {
       vi.stubEnv("AWS_ENDPOINT_URL_S3", endpoint)
       await expect(
-        uploadCommunityLogo(communityId, {
+        uploadMedia("poster", communityId, {
           body: new Uint8Array(),
           contentType: "image/png",
           extension: "png",
@@ -126,11 +99,41 @@ describe("branch scoped object storage", () => {
   )
 
   it("deletes only the supplied newly created key", async () => {
-    await discardCommunityLogo(key)
+    await discardMedia(key)
     expect(mocks.send.mock.calls[0][0].input).toEqual({
-      Bucket: "vboard-assets",
+      Bucket: "vboard",
       Key: key,
     })
     expect(mocks.destroy).toHaveBeenCalledOnce()
+  })
+
+  it("stores a poster under its own folder", async () => {
+    const result = await uploadMedia("poster", communityId, {
+      body: new Uint8Array([1]),
+      contentType: "image/webp",
+      extension: "webp",
+    })
+    expect(result.key).toMatch(
+      new RegExp(`^post-posters/${communityId}/[a-f0-9-]{36}\\.webp$`)
+    )
+  })
+
+  it("reads an object from the configured bucket and reports a missing one", async () => {
+    const { NoSuchKey } = await import("@aws-sdk/client-s3")
+    mocks.send.mockResolvedValueOnce({
+      Body: { transformToByteArray: async () => new Uint8Array([7, 8]) },
+    })
+    expect(await readMedia(key)).toEqual(new Uint8Array([7, 8]))
+    expect(mocks.send.mock.calls[0][0].input).toEqual({
+      Bucket: "vboard",
+      Key: key,
+    })
+    mocks.send.mockRejectedValueOnce(
+      new (NoSuchKey as unknown as new () => Error)()
+    )
+    expect(await readMedia(key)).toBeNull()
+    mocks.send.mockRejectedValueOnce(new Error("storage unavailable"))
+    await expect(readMedia(key)).rejects.toThrow("storage unavailable")
+    expect(mocks.destroy).toHaveBeenCalledTimes(3)
   })
 })

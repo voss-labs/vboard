@@ -18,6 +18,8 @@ import {
 import { firstIssue, postFormSchema } from "@/db/validations"
 import { done, fail, type ActionResult } from "@/lib/action-result"
 import { attemptAction } from "@/lib/action-error"
+import { readImage } from "@/lib/media"
+import { withMediaUpload } from "@/lib/media-upload"
 import { keepsAnsweredQuestions } from "@/lib/registration-form"
 import { randomSuffix, uniqueSlug } from "@/lib/slug"
 import {
@@ -73,18 +75,23 @@ export async function createPostAction(
   const { intent, ...data } = parsed.data
   if (intent === "publish" && !access.can("post:publish"))
     return fail("You cannot publish here.")
+  const poster = await readImage(formData.get("posterFile"), "poster")
+  if (!poster.ok) return fail(poster.error)
   let createdId = ""
   const result = await attemptAction(() =>
-    withDb({ userId: access.user.id }, async (ctx) => {
-      const created = await createPost(ctx, {
-        ...data,
-        slug: uniqueSlug(data.title, randomSuffix()),
-        communityId: access.community.id,
-        status: intent === "publish" ? "published" : "draft",
+    withMediaUpload("poster", access.community.id, poster.data, (imageUrl) =>
+      withDb({ userId: access.user.id }, async (ctx) => {
+        const created = await createPost(ctx, {
+          ...data,
+          imageUrl,
+          slug: uniqueSlug(data.title, randomSuffix()),
+          communityId: access.community.id,
+          status: intent === "publish" ? "published" : "draft",
+        })
+        createdId = created.id
+        return done()
       })
-      createdId = created.id
-      return done()
-    })
+    )
   )
   if (!result.ok) return result
   revalidateCommunity(access.community.slug)
@@ -103,31 +110,44 @@ export async function updatePostAction(
   const parsed = readPostForm(formData)
   if (!parsed.success) return fail(firstIssue(parsed.error))
   const { intent: _intent, ...data } = parsed.data
+  const removal = z
+    .enum(["on", ""])
+    .safeParse(formData.get("removePoster") ?? "")
+  if (!removal.success) return fail("Choose whether to remove the poster.")
+  const poster = await readImage(formData.get("posterFile"), "poster")
+  if (!poster.ok) return fail(poster.error)
+  if (removal.data === "on" && poster.data)
+    return fail("Choose a poster or remove the current one, then save.")
   let postSlug = "",
     postId = ""
   const result = await attemptAction(() =>
-    withDb({ userId: access.user.id }, async (ctx) => {
-      const post = await postInCommunity(ctx, access, formData.get("postId"))
-      if (!post) return fail("Post not found.")
-      const answers = post.isEvent
-        ? (await listRegistrations(ctx, post.id)).map((row) => row.answers)
-        : []
-      if (
-        answers.length > 0 &&
-        !keepsAnsweredQuestions(
-          post.registrationQuestions,
-          data.registrationQuestions,
-          answers
+    withMediaUpload("poster", access.community.id, poster.data, (uploaded) =>
+      withDb({ userId: access.user.id }, async (ctx) => {
+        const post = await postInCommunity(ctx, access, formData.get("postId"))
+        if (!post) return fail("Post not found.")
+        const answers = post.isEvent
+          ? (await listRegistrations(ctx, post.id)).map((row) => row.answers)
+          : []
+        if (
+          answers.length > 0 &&
+          !keepsAnsweredQuestions(
+            post.registrationQuestions,
+            data.registrationQuestions,
+            answers
+          )
         )
-      )
-        return fail(
-          "Students have already answered this form. You can reword questions and choices, but not remove a question, change its type or remove a choice someone picked."
-        )
-      await updatePost(ctx, access.community.id, post.id, data)
-      postSlug = post.slug
-      postId = post.id
-      return done()
-    })
+          return fail(
+            "Students have already answered this form. You can reword questions and choices, but not remove a question, change its type or remove a choice someone picked."
+          )
+        await updatePost(ctx, access.community.id, post.id, {
+          ...data,
+          imageUrl: removal.data === "on" ? null : (uploaded ?? undefined),
+        })
+        postSlug = post.slug
+        postId = post.id
+        return done()
+      })
+    )
   )
   if (!result.ok) return result
   revalidateCommunity(access.community.slug, postSlug)

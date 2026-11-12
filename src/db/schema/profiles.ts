@@ -1,5 +1,13 @@
 import { domainPolicies } from "@/db/schema/rls"
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+import {
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core"
 import { user } from "./auth"
 
 export const profile = pgTable(
@@ -10,6 +18,8 @@ export const profile = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     rollNumber: text("roll_number"),
     department: text("department"),
+    cohortYear: integer("cohort_year"),
+    phone: text("phone"),
     bio: text("bio"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -21,5 +31,13 @@ export const profile = pgTable(
   (t) => [
     ...domainPolicies("profile"),
     index("profile_roll_number_idx").on(t.rollNumber),
+    check(
+      "profile_cohort_year_range",
+      sql`${t.cohortYear} IS NULL OR ${t.cohortYear} BETWEEN 2000 AND 2100`
+    ),
+    check(
+      "profile_phone_format",
+      sql`${t.phone} IS NULL OR ${t.phone} ~ '^[6-9][0-9]{9}$'`
+    ),
   ]
 ).enableRLS()
