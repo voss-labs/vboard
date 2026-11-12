@@ -38,10 +38,6 @@ export function parseRollNumber(raw: string): ParsedRollNumber | null {
 
   const [, year, branchCode, division, classDigits] = match
   const department = BRANCH_DEPARTMENTS[branchCode] ?? null
-  if (division === "C" && department && !["IT", "CMPN"].includes(department)) {
-    return null
-  }
-
   const classNumber = Number(classDigits)
   return {
     admissionYear: 2000 + Number(year),

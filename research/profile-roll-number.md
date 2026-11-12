@@ -6,7 +6,7 @@ Reference: [VERP roll-number implementation](https://github.com/voss-labs/verp/b
 
 - Format: two admission-year digits, three branch digits, division A–C and four class-number digits, for example `23108A0054`.
 - Codes: 101 IT, 102 CMPN, 104 EXTC, 105 BIOMED and 108 EXCS. Legacy 103 also maps to EXCS. Bio-med is the display label for BIOMED.
-- IT and CMPN allow A/B/C; the remaining branches allow A/B. Unlike VERP's college-wide importer, this profile boundary rejects unknown branches because only these five departments are supported.
+- Every branch allows divisions A, B and C. An earlier rule limited C to IT and CMPN and rejected a real first-year EXCS roll number (`26108C0085`, 2026-11-12). Unlike VERP's college-wide importer, this profile boundary rejects unknown branches because only these five departments are supported.
 - Class numbers from 2000 indicate direct-second-year admission. Their academic cohort starts one year before their admission year.
 - Academic years progress FE/SE/TE/BE at the June boundary. Outside those four years, no current year is inferred. Admission data alone does not establish graduation or repeated-year status.
 
