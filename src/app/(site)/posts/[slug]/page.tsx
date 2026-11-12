@@ -13,6 +13,7 @@ import { getPostDetailBySlug } from "@/db/queries/posts"
 import { formatShortDate } from "@/lib/format"
 import { mediaUrl } from "@/lib/media"
 import { canSeeLocation, seatsLeft } from "@/lib/registration"
+import { answerLabels } from "@/lib/registration-form"
 import { getTrustedActor } from "@/lib/session"
 import {
   EventFacts,
@@ -42,7 +43,7 @@ export default async function PostPage({ params }: Props) {
   const poster = mediaUrl(post.imageUrl)
   const answers =
     registration && registration.status !== "cancelled"
-      ? registration.answers
+      ? answerLabels(questions, registration.answers)
       : null
 
   return (

@@ -20,10 +20,15 @@ const choiceQuestion = z
     options: z
       .array(
         z
-          .string()
-          .trim()
-          .min(1, "Choices cannot be empty")
-          .max(100, "Keep choices under 100 characters")
+          .object({
+            id: z.uuid(),
+            label: z
+              .string()
+              .trim()
+              .min(1, "Choices cannot be empty")
+              .max(100, "Keep choices under 100 characters"),
+          })
+          .strict()
       )
       .min(2, "A choice question needs at least two choices")
       .max(MAX_OPTIONS, `A question can have at most ${MAX_OPTIONS} choices`),
@@ -49,7 +54,12 @@ export const questionsSchema = z
     if (ids.size !== questions.length)
       ctx.addIssue({ code: "custom", message: "Questions must be distinct" })
     for (const q of questions) {
-      if (q.type === "choice" && new Set(q.options).size !== q.options.length)
+      if (
+        q.type === "choice" &&
+        (distinct(q.options.map((o) => o.label)) !== q.options.length ||
+          distinct(q.options.map((o) => o.id.toLowerCase())) !==
+            q.options.length)
+      )
         ctx.addIssue({
           code: "custom",
           message: `"${q.label}" repeats a choice`,
@@ -64,6 +74,10 @@ export const questionsSchema = z
 
 export type RegistrationQuestion = z.infer<typeof questionsSchema>[number]
 export type RegistrationAnswers = Record<string, string>
+
+function distinct(values: string[]): number {
+  return new Set(values).size
+}
 
 export function normalizeAnswer(value: string): string {
   return value
@@ -107,7 +121,7 @@ export function validateAnswers(
       continue
     }
     if (q.type === "choice") {
-      if (!q.options.includes(value))
+      if (!q.options.some((option) => option.id === value))
         return { ok: false, error: `Pick one of the choices for "${q.label}".` }
     } else {
       const words = countWords(value)
@@ -127,14 +141,47 @@ export function validateAnswers(
   return { ok: true, answers }
 }
 
+export function answerLabels(
+  questions: RegistrationQuestion[],
+  answers: RegistrationAnswers
+): RegistrationAnswers {
+  const labels: RegistrationAnswers = {}
+  for (const q of questions) {
+    const answer = answers[q.id]
+    if (!answer) continue
+    const label =
+      q.type === "choice"
+        ? q.options.find((option) => option.id === answer)?.label
+        : answer
+    if (label) labels[q.id] = label
+  }
+  return labels
+}
+
+export function pickedChoices(
+  questions: RegistrationQuestion[],
+  answers: RegistrationAnswers[]
+): string[] {
+  const picked = new Set<string>()
+  for (const q of questions)
+    if (q.type === "choice")
+      for (const given of answers) if (given[q.id]) picked.add(given[q.id])
+  return [...picked]
+}
+
 export function keepsAnsweredQuestions(
   previous: RegistrationQuestion[],
-  next: RegistrationQuestion[]
+  next: RegistrationQuestion[],
+  answers: RegistrationAnswers[]
 ): boolean {
   return previous.every((old) => {
-    const kept = next.find((q) => q.id === old.id)
-    if (!kept || kept.type !== old.type) return false
-    if (old.type !== "choice" || kept.type !== "choice") return true
-    return old.options.every((option) => kept.options.includes(option))
+    const kept = next.find((q) => q.id === old.id && q.type === old.type)
+    if (!kept) return false
+    if (kept.type !== "choice") return true
+    return answers.every(
+      (given) =>
+        !given[old.id] ||
+        kept.options.some((option) => option.id === given[old.id])
+    )
   })
 }

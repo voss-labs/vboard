@@ -26,7 +26,7 @@ type Draft = {
   type: "choice" | "text"
   label: string
   required: boolean
-  options: string[]
+  options: { id: string; label: string }[]
   minWords: string
   maxWords: string
 }
@@ -75,36 +75,41 @@ function keepInForm(
   if (event.key === "Enter") event.preventDefault()
 }
 
+function blankChoice() {
+  return { id: crypto.randomUUID(), label: "" }
+}
+
 export function QuestionBuilder({
   initial,
   locked,
+  pickedChoices,
 }: {
   initial: RegistrationQuestion[]
   locked: boolean
+  pickedChoices: string[]
 }) {
   const [drafts, setDrafts] = useState<Draft[]>(() => initial.map(toDraft))
-  const frozen = new Map(
-    locked
-      ? initial.map((q) => [q.id, q.type === "choice" ? q.options.length : 0])
-      : []
-  )
+  const frozen = new Set(locked ? initial.map((q) => q.id) : [])
   const patch = (id: string, change: Partial<Draft>) =>
     setDrafts((prev) =>
       prev.map((d) => (d.id === id ? { ...d, ...change } : d))
     )
-  const add = (type: Draft["type"]) =>
+  const add = (type: Draft["type"]) => {
+    const id = crypto.randomUUID()
+    setFresh(id)
     setDrafts((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id,
         type,
         label: "",
         required: true,
-        options: type === "choice" ? ["", ""] : [],
+        options: type === "choice" ? [blankChoice(), blankChoice()] : [],
         minWords: "0",
         maxWords: String(DEFAULT_MAX_WORDS),
       },
     ])
+  }
   const [fresh, setFresh] = useState<string | null>(null)
   const full = drafts.length >= MAX_QUESTIONS
 
@@ -122,8 +127,9 @@ export function QuestionBuilder({
       </p>
       {frozen.size > 0 && (
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Students have already answered. You can reword questions and add new
-          questions or choices, but not remove what they answered.
+          Students have already answered. You can reword questions and choices,
+          and every answer shows the new wording. A question or a choice that
+          someone picked cannot be removed.
         </p>
       )}
       {drafts.length === 0 && (
@@ -131,162 +137,161 @@ export function QuestionBuilder({
           This event registers in one click unless you add questions.
         </p>
       )}
-      {drafts.map((d, index) => {
-        const frozenOptions = frozen.get(d.id) ?? 0
-        return (
-          <div
-            key={d.id}
-            className="flex min-w-0 flex-col gap-4 rounded-lg border p-3 sm:p-4"
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">
-                {d.type === "choice" ? "Choice" : "Text"}
-              </Badge>
-              <span className="text-muted-foreground mr-auto text-xs">
-                Question {index + 1}
-              </span>
+      {drafts.map((d, index) => (
+        <div
+          key={d.id}
+          className="flex min-w-0 flex-col gap-4 rounded-lg border p-3 sm:p-4"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">
+              {d.type === "choice" ? "Choice" : "Text"}
+            </Badge>
+            <span className="text-muted-foreground mr-auto text-xs">
+              Question {index + 1}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={frozen.has(d.id)}
+              aria-label={`Remove question ${index + 1}`}
+              onClick={() =>
+                setDrafts((prev) => prev.filter((x) => x.id !== d.id))
+              }
+            >
+              <Trash2Icon />
+            </Button>
+          </div>
+          <Field>
+            <FieldLabel htmlFor={`question-${d.id}`}>Question</FieldLabel>
+            <Textarea
+              id={`question-${d.id}`}
+              autoFocus={fresh === d.id}
+              rows={1}
+              value={d.label}
+              onChange={(e) =>
+                patch(d.id, {
+                  label: e.target.value.replace(/\s*\n\s*/g, " "),
+                })
+              }
+              onKeyDown={keepInForm}
+              className="min-h-11 resize-none md:min-h-9 md:py-1.5"
+              placeholder={
+                d.type === "choice"
+                  ? "Which role do you want to interview for?"
+                  : "Tell us about yourself"
+              }
+              required
+              maxLength={200}
+            />
+          </Field>
+          {d.type === "choice" ? (
+            <Field>
+              <FieldLabel>Choices</FieldLabel>
+              <div className="flex flex-col gap-2">
+                {d.options.map((option, at) => (
+                  <div key={option.id} className="flex items-center gap-2">
+                    <Input
+                      autoFocus={fresh === option.id}
+                      value={option.label}
+                      onChange={(e) =>
+                        patch(d.id, {
+                          options: d.options.map((o) =>
+                            o.id === option.id
+                              ? { ...o, label: e.target.value }
+                              : o
+                          ),
+                        })
+                      }
+                      onKeyDown={keepInForm}
+                      aria-label={`Choice ${at + 1} of question ${index + 1}`}
+                      placeholder={`Choice ${at + 1}`}
+                      required
+                      maxLength={100}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={
+                        d.options.length <= 2 ||
+                        pickedChoices.includes(option.id)
+                      }
+                      aria-label={`Remove choice ${at + 1} of question ${index + 1}`}
+                      onClick={() =>
+                        patch(d.id, {
+                          options: d.options.filter((o) => o.id !== option.id),
+                        })
+                      }
+                    >
+                      <XIcon />
+                    </Button>
+                  </div>
+                ))}
+              </div>
               <Button
                 type="button"
-                variant="ghost"
-                size="icon-sm"
-                disabled={frozen.has(d.id)}
-                aria-label={`Remove question ${index + 1}`}
-                onClick={() =>
-                  setDrafts((prev) => prev.filter((x) => x.id !== d.id))
-                }
+                variant="outline"
+                size="sm"
+                className="self-start"
+                disabled={d.options.length >= MAX_OPTIONS}
+                onClick={() => {
+                  const choice = blankChoice()
+                  setFresh(choice.id)
+                  patch(d.id, { options: [...d.options, choice] })
+                }}
               >
-                <Trash2Icon />
+                <PlusIcon data-icon="inline-start" />
+                Add choice
               </Button>
-            </div>
-            <Field>
-              <FieldLabel htmlFor={`question-${d.id}`}>Question</FieldLabel>
-              <Textarea
-                id={`question-${d.id}`}
-                rows={1}
-                value={d.label}
-                onChange={(e) =>
-                  patch(d.id, {
-                    label: e.target.value.replace(/\s*\n\s*/g, " "),
-                  })
-                }
-                onKeyDown={keepInForm}
-                className="min-h-11 resize-none md:min-h-9 md:py-1.5"
-                placeholder={
-                  d.type === "choice"
-                    ? "Which role do you want to interview for?"
-                    : "Tell us about yourself"
-                }
-                required
-                maxLength={200}
-              />
             </Field>
-            {d.type === "choice" ? (
+          ) : (
+            <div className="grid grid-cols-2 items-start gap-3 sm:gap-4">
               <Field>
-                <FieldLabel>Choices</FieldLabel>
-                <div className="flex flex-col gap-2">
-                  {d.options.map((option, at) => (
-                    <div key={at} className="flex items-center gap-2">
-                      <Input
-                        ref={
-                          fresh === `${d.id}:${at}`
-                            ? (element) => element?.focus()
-                            : undefined
-                        }
-                        value={option}
-                        onChange={(e) =>
-                          patch(d.id, {
-                            options: d.options.map((o, i) =>
-                              i === at ? e.target.value : o
-                            ),
-                          })
-                        }
-                        onKeyDown={keepInForm}
-                        aria-label={`Choice ${at + 1} of question ${index + 1}`}
-                        placeholder={`Choice ${at + 1}`}
-                        readOnly={at < frozenOptions}
-                        required
-                        maxLength={100}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={at < frozenOptions || d.options.length <= 2}
-                        aria-label={`Remove choice ${at + 1} of question ${index + 1}`}
-                        onClick={() =>
-                          patch(d.id, {
-                            options: d.options.filter((_, i) => i !== at),
-                          })
-                        }
-                      >
-                        <XIcon />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="self-start"
-                  disabled={d.options.length >= MAX_OPTIONS}
-                  onClick={() => {
-                    setFresh(`${d.id}:${d.options.length}`)
-                    patch(d.id, { options: [...d.options, ""] })
-                  }}
-                >
-                  <PlusIcon data-icon="inline-start" />
-                  Add choice
-                </Button>
+                <FieldLabel htmlFor={`min-${d.id}`}>Minimum words</FieldLabel>
+                <Input
+                  id={`min-${d.id}`}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={Number(d.maxWords) || MAX_WORD_LIMIT}
+                  step={1}
+                  value={d.minWords}
+                  onChange={(e) => patch(d.id, { minWords: e.target.value })}
+                  onKeyDown={keepInForm}
+                  required
+                />
+                <FieldDescription>0 sets no minimum.</FieldDescription>
               </Field>
-            ) : (
-              <div className="grid grid-cols-2 items-start gap-3 sm:gap-4">
-                <Field>
-                  <FieldLabel htmlFor={`min-${d.id}`}>Minimum words</FieldLabel>
-                  <Input
-                    id={`min-${d.id}`}
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={Number(d.maxWords) || MAX_WORD_LIMIT}
-                    step={1}
-                    value={d.minWords}
-                    onChange={(e) => patch(d.id, { minWords: e.target.value })}
-                    onKeyDown={keepInForm}
-                    required
-                  />
-                  <FieldDescription>0 sets no minimum.</FieldDescription>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor={`max-${d.id}`}>Maximum words</FieldLabel>
-                  <Input
-                    id={`max-${d.id}`}
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={MAX_WORD_LIMIT}
-                    step={1}
-                    value={d.maxWords}
-                    onChange={(e) => patch(d.id, { maxWords: e.target.value })}
-                    onKeyDown={keepInForm}
-                    required
-                  />
-                </Field>
-              </div>
-            )}
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldLabel htmlFor={`required-${d.id}`}>Required</FieldLabel>
-              </FieldContent>
-              <Switch
-                id={`required-${d.id}`}
-                checked={d.required}
-                onCheckedChange={(on) => patch(d.id, { required: on })}
-              />
-            </Field>
-          </div>
-        )
-      })}
+              <Field>
+                <FieldLabel htmlFor={`max-${d.id}`}>Maximum words</FieldLabel>
+                <Input
+                  id={`max-${d.id}`}
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={MAX_WORD_LIMIT}
+                  step={1}
+                  value={d.maxWords}
+                  onChange={(e) => patch(d.id, { maxWords: e.target.value })}
+                  onKeyDown={keepInForm}
+                  required
+                />
+              </Field>
+            </div>
+          )}
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldLabel htmlFor={`required-${d.id}`}>Required</FieldLabel>
+            </FieldContent>
+            <Switch
+              id={`required-${d.id}`}
+              checked={d.required}
+              onCheckedChange={(on) => patch(d.id, { required: on })}
+            />
+          </Field>
+        </div>
+      ))}
       <div className="grid gap-2 sm:flex sm:flex-wrap">
         <Button
           type="button"

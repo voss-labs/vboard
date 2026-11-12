@@ -18,6 +18,7 @@ import { buttonVariants } from "@/components/ui/button-variants"
 import { LinkedText } from "@/components/linked-text"
 import { getPostById } from "@/db/queries/posts"
 import { listRegistrations } from "@/db/queries/registrations"
+import { answerLabels } from "@/lib/registration-form"
 import { formatEventRange, formatStamp } from "@/lib/format"
 import { divisionOf, studyYearLabel } from "@/lib/profile"
 import { requireCommunityAccess } from "@/lib/session"
@@ -173,7 +174,7 @@ export default async function ManagePostPage({
                   bio: r.bio,
                   status: r.status,
                   registeredAt: formatStamp(r.registeredAt),
-                  answers: r.answers,
+                  answers: answerLabels(post.registrationQuestions, r.answers),
                 }))}
               />
             </Panel>

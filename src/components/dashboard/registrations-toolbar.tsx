@@ -147,12 +147,12 @@ export function RegistrationsToolbar({
                         </DropdownMenuRadioItem>
                         {q.options.map((option) => (
                           <DropdownMenuRadioItem
-                            key={option}
-                            value={option}
+                            key={option.id}
+                            value={option.label}
                             closeOnClick={false}
                             className="wrap-anywhere"
                           >
-                            {option}
+                            {option.label}
                           </DropdownMenuRadioItem>
                         ))}
                       </DropdownMenuRadioGroup>

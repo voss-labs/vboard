@@ -190,10 +190,12 @@ function ChoiceField({
     setValue(next)
     onAnswered(question.id, next !== null)
   }
-  const longest = Math.max(...question.options.map((option) => option.length))
+  const longest = Math.max(
+    ...question.options.map((option) => option.label.length)
+  )
 
   return (
-    <FieldSet className="gap-3">
+    <FieldSet className="min-w-0 gap-3">
       <FieldLegend
         variant="label"
         className="flex flex-wrap items-baseline gap-x-2 gap-y-1 leading-snug"
@@ -210,20 +212,20 @@ function ChoiceField({
       >
         {question.options.map((option) => (
           <label
-            key={option}
+            key={option.id}
             className="hover:bg-accent has-checked:border-ring has-checked:bg-accent has-focus-visible:ring-ring/50 flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors has-focus-visible:ring-3"
           >
             <input
               type="radio"
               name={`answer.${question.id}`}
-              value={option}
-              aria-label={option}
+              value={option.id}
+              aria-label={option.label}
               required={question.required}
-              checked={value === option}
-              onChange={() => pick(option)}
+              checked={value === option.id}
+              onChange={() => pick(option.id)}
               className="accent-primary size-4 shrink-0 outline-none"
             />
-            <span className="min-w-0 break-words">{option}</span>
+            <span className="min-w-0 wrap-anywhere">{option.label}</span>
           </label>
         ))}
       </div>

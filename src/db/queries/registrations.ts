@@ -54,14 +54,6 @@ async function eventScope(ctx: DbContext, postId: string) {
 export async function getEventQuestions(ctx: DbContext, postId: string) {
   return (await eventScope(ctx, postId)).questions
 }
-export async function hasRegistrations(ctx: DbContext, postId: string) {
-  const rows = await ctx.tx
-    .select({ id: registration.id })
-    .from(registration)
-    .where(eq(registration.postId, postId))
-    .limit(1)
-  return rows.length > 0
-}
 export async function registerForEvent(
   ctx: DbContext,
   postId: string,
