@@ -55,7 +55,7 @@ describe("profile roll-number save", () => {
     expect(mocks.revalidate).toHaveBeenCalledWith("/dashboard", "layout")
   })
 
-  it.each(["22101", "23999A0001", "23108D0001", "23104 C0001"])(
+  it.each(["22101", "23999A0001", "2310810001", "23104 C0001"])(
     "rejects invalid or unsupported roll %s before a write",
     async (roll) => {
       expect((await updateProfileAction(null, form(roll))).ok).toBe(false)

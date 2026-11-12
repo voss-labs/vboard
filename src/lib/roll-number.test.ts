@@ -52,9 +52,12 @@ describe("parseRollNumber", () => {
   })
 
   it.each(["101", "102", "103", "104", "105", "108"])(
-    "accepts division C for branch %s",
+    "accepts any division letter for branch %s",
     (code) => {
-      expect(parseRollNumber(`26${code}C0001`)?.division).toBe("C")
+      for (const division of ["A", "C", "D", "H", "Z"])
+        expect(parseRollNumber(`26${code}${division}0001`)?.division).toBe(
+          division
+        )
     }
   )
 
@@ -77,12 +80,16 @@ describe("parseRollNumber", () => {
     })
   })
 
-  it.each(["", "26101A001", "26101A00012", "26101D0001", "26 101A0001"])(
-    "rejects malformed roll number %j",
-    (raw) => {
-      expect(parseRollNumber(raw)).toBeNull()
-    }
-  )
+  it.each([
+    "",
+    "26101A001",
+    "26101A00012",
+    "2610110001",
+    "26101AA001",
+    "26 101A0001",
+  ])("rejects malformed roll number %j", (raw) => {
+    expect(parseRollNumber(raw)).toBeNull()
+  })
 
   it.each([
     ["1999", false],
@@ -132,7 +139,7 @@ describe("currentYear", () => {
 
   it("returns null when the roll number or inferred year is invalid", () => {
     expect(currentYear("invalid", academicYear)).toBeNull()
-    expect(currentYear("26104D0001", academicYear)).toBeNull()
+    expect(currentYear("2610410001", academicYear)).toBeNull()
     expect(currentYear("27101A0001", academicYear)).toBeNull()
     expect(currentYear("22101A0001", academicYear)).toBeNull()
     expect(currentYear("23101A2000", academicYear)).toBeNull()

@@ -27,13 +27,13 @@ type ParsedRollNumber = {
   admissionYear: number
   branchCode: string
   department: Department | null
-  division: "A" | "B" | "C"
+  division: string
   classNumber: number
   isDSY: boolean
 }
 
 export function parseRollNumber(raw: string): ParsedRollNumber | null {
-  const match = /^(\d{2})(\d{3})([A-C])(\d{4})$/.exec(raw.trim().toUpperCase())
+  const match = /^(\d{2})(\d{3})([A-Z])(\d{4})$/.exec(raw.trim().toUpperCase())
   if (!match) return null
 
   const [, year, branchCode, division, classDigits] = match
@@ -43,7 +43,7 @@ export function parseRollNumber(raw: string): ParsedRollNumber | null {
     admissionYear: 2000 + Number(year),
     branchCode,
     department,
-    division: division as ParsedRollNumber["division"],
+    division,
     classNumber,
     isDSY: classNumber >= 2000,
   }
