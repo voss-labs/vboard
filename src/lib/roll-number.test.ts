@@ -51,16 +51,23 @@ describe("parseRollNumber", () => {
     })
   })
 
-  it.each(["101", "102"])("accepts division C for branch %s", (code) => {
-    expect(parseRollNumber(`26${code}C0001`)?.division).toBe("C")
-  })
-
-  it.each(["103", "104", "105", "108"])(
-    "rejects division C for branch %s",
+  it.each(["101", "102", "103", "104", "105", "108"])(
+    "accepts any division letter for branch %s",
     (code) => {
-      expect(parseRollNumber(`26${code}C0001`)).toBeNull()
+      for (const division of ["A", "C", "D", "H", "Z"])
+        expect(parseRollNumber(`26${code}${division}0001`)?.division).toBe(
+          division
+        )
     }
   )
+
+  it("accepts a first-year EXCS roll number in division C", () => {
+    expect(parseRollNumber("26108C0085")).toMatchObject({
+      admissionYear: 2026,
+      department: "EXCS",
+      division: "C",
+    })
+  })
 
   it("preserves an unknown branch without inferring a department", () => {
     expect(parseRollNumber("26999C0001")).toEqual({
@@ -73,12 +80,16 @@ describe("parseRollNumber", () => {
     })
   })
 
-  it.each(["", "26101A001", "26101A00012", "26101D0001", "26 101A0001"])(
-    "rejects malformed roll number %j",
-    (raw) => {
-      expect(parseRollNumber(raw)).toBeNull()
-    }
-  )
+  it.each([
+    "",
+    "26101A001",
+    "26101A00012",
+    "2610110001",
+    "26101AA001",
+    "26 101A0001",
+  ])("rejects malformed roll number %j", (raw) => {
+    expect(parseRollNumber(raw)).toBeNull()
+  })
 
   it.each([
     ["1999", false],
@@ -128,7 +139,7 @@ describe("currentYear", () => {
 
   it("returns null when the roll number or inferred year is invalid", () => {
     expect(currentYear("invalid", academicYear)).toBeNull()
-    expect(currentYear("26104C0001", academicYear)).toBeNull()
+    expect(currentYear("2610410001", academicYear)).toBeNull()
     expect(currentYear("27101A0001", academicYear)).toBeNull()
     expect(currentYear("22101A0001", academicYear)).toBeNull()
     expect(currentYear("23101A2000", academicYear)).toBeNull()
