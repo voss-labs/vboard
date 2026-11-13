@@ -3,7 +3,9 @@ import { authDb, closeAuthDatabase, verifyAuthDatabase } from "@/db/auth-db"
 
 const mocks = vi.hoisted(() => ({
   configure: vi.fn(),
+  connect: vi.fn(),
   query: vi.fn(),
+  release: vi.fn(),
   end: vi.fn(),
   database: { query: { user: {} } },
 }))
@@ -12,7 +14,8 @@ vi.mock("pg", () => ({
     constructor(config: unknown) {
       mocks.configure(config)
     }
-    query = mocks.query
+    connect = mocks.connect
+    on = vi.fn()
     end = mocks.end
   },
 }))
@@ -29,6 +32,12 @@ beforeEach(async () => {
     "AUTH_DATABASE_URL",
     "postgresql://owner:ignored@localhost/ignored"
   )
+  mocks.connect.mockResolvedValue({
+    query: mocks.query,
+    release: mocks.release,
+    on: vi.fn(),
+    removeListener: vi.fn(),
+  })
   mocks.query.mockResolvedValue({ rows: [{ valid: true }] })
 })
 afterEach(async () => {
@@ -70,5 +79,16 @@ describe("single runtime database authentication adapter", () => {
     expect(() => Reflect.get(authDb, "query")).toThrow(
       "verification must complete"
     )
+  })
+
+  it("does not remember a failed verification", async () => {
+    mocks.query.mockRejectedValueOnce(new Error("connection lost"))
+    await expect(verifyAuthDatabase()).rejects.toThrow("connection lost")
+    expect(() => Reflect.get(authDb, "query")).toThrow(
+      "verification must complete"
+    )
+    await verifyAuthDatabase()
+    expect(mocks.query).toHaveBeenCalledTimes(2)
+    expect(Reflect.get(authDb, "query")).toBe(mocks.database.query)
   })
 })

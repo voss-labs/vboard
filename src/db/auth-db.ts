@@ -18,7 +18,10 @@ function getDatabase() {
 
 export async function verifyAuthDatabase() {
   getDatabase()
-  verified ??= verifyPrincipal(pool!)
+  verified ??= verifyPrincipal(pool!).catch((error) => {
+    verified = undefined
+    throw error
+  })
   await verified
   authorized = true
 }
