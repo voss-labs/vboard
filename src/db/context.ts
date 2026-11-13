@@ -1,7 +1,12 @@
 import type { Pool } from "pg"
 import { sql } from "drizzle-orm"
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres"
-import { createPool, verifyPrincipal } from "@/db/pool"
+import {
+  createPool,
+  retryConnect,
+  verifyPrincipal,
+  withClient,
+} from "@/db/pool"
 import * as schema from "@/db/schema"
 
 export type DbActor = Readonly<{ userId: string }>
@@ -10,37 +15,38 @@ export type DbTransaction = Parameters<
 >[0]
 export type DbContext = Readonly<{ tx: DbTransaction; actorId: string | null }>
 let runtimePool: Pool | undefined
-let database: NodePgDatabase<typeof schema> | undefined
 let verified: Promise<void> | undefined
 
-function getDatabase() {
-  if (!database) {
-    const pool = createPool()
-    runtimePool = pool
-    verified = verifyPrincipal(pool)
-    database = drizzle(pool, { schema })
-  }
-  return database
+function verifiedPool() {
+  const pool = (runtimePool ??= createPool())
+  verified ??= verifyPrincipal(pool).catch((error) => {
+    verified = undefined
+    throw error
+  })
+  return verified.then(() => pool)
 }
 
 export async function withDb<T>(
   actor: DbActor | null,
   work: (ctx: DbContext) => Promise<T>
 ): Promise<T> {
-  const db = getDatabase()
-  await verified
-  return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`select set_config('vboard.actor_id', ${actor?.userId ?? ""}, true)`
+  const pool = await verifiedPool()
+  return retryConnect((connected) =>
+    withClient(pool, (client) =>
+      drizzle(client, { schema }).transaction(async (tx) => {
+        connected()
+        await tx.execute(
+          sql`select set_config('vboard.actor_id', ${actor?.userId ?? ""}, true)`
+        )
+        await tx.execute(sql`select vboard_api.actor_id()`)
+        return work({ tx, actorId: actor?.userId ?? null })
+      })
     )
-    await tx.execute(sql`select vboard_api.actor_id()`)
-    return work({ tx, actorId: actor?.userId ?? null })
-  })
+  )
 }
 
 export async function closeDatabase() {
   await runtimePool?.end()
   runtimePool = undefined
-  database = undefined
   verified = undefined
 }

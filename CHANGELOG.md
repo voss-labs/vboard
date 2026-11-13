@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Database connections recover on their own: a failed first connection is no longer remembered by the server and replayed to every later request, a connection that cannot be opened is tried once more before any work runs, and a connection that dies while idle or in use no longer takes the server process down. Fixes the "We couldn't load this page" errors that followed a slow database wake-up.
 - Registration questions: choices can be reworded after students register and every answer shows the new wording; a choice nobody picked can be removed. Answers now point at the choice itself, not its text. Fixed the question builder moving the cursor back to the last added choice while typing elsewhere.
 - Roll numbers: any division letter is accepted for every department, so students in a third or later division can complete their profile.
 - Updates: Super admin writes an email on the Updates page and sends it to everyone who has signed in, to people with a complete profile, or to people who have not completed theirs. Each person gets their own copy addressed by first name, with an optional button to their profile; a test goes only to the sender, the send asks for confirmation and is written to the audit log. Sent through Resend (`RESEND_API_KEY`, `EMAIL_FROM`). New `vboard_api.update_recipients()` projection (migration 0014).
